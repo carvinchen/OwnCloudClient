@@ -313,6 +313,8 @@ namespace OwnCloudClient
 			Console.WriteLine("runonce: " + runOnce);
 			Console.WriteLine("massdownload: " + massDownload);
 			Console.WriteLine("sleepSeconds: " + sleepSeconds);
+			Console.WriteLine("watchdir: " + Settings.WatchDir);
+			Console.WriteLine("baseurl: " + Settings.OwnCloudUrl);
 
 			if (!OwnCloudClient.Login(userName, password))
 			{
