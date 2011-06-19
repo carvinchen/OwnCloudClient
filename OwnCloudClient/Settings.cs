@@ -118,5 +118,25 @@ namespace OwnCloudClient
 				return 10;
 			}
 		}
+
+		public static string Password
+		{
+			get
+			{
+				if (ConfigurationManager.AppSettings.AllKeys.Contains("Password"))
+					return ConfigurationManager.AppSettings["Password"].ToString();
+				return null;
+			}
+		}
+
+		public static string UserName
+		{
+			get
+			{
+				if (ConfigurationManager.AppSettings.AllKeys.Contains("UserName"))
+					return ConfigurationManager.AppSettings["UserName"].ToString();
+				return null;
+			}
+		}
 	}
 }

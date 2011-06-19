@@ -259,8 +259,8 @@ namespace OwnCloudClient
 			bool massDownload = Settings.MassDownload;
 			int sleepSeconds = Settings.SleepSeconds;
 
-			string userName = "";
-			string password = "";
+			string userName = Settings.UserName;
+			string password = Settings.Password;
 
 			GetOpt parser = new GetOpt(args);
 			try
@@ -317,11 +317,17 @@ namespace OwnCloudClient
 				Console.WriteLine(exception2.ToString());
 			}
 
-			Console.Write("Enter UserName: ");
-			userName = Console.ReadLine();
-			Console.Write("Enter Password: ");
-			password = ReadPassword();
-			Console.WriteLine();
+			if (string.IsNullOrEmpty(userName))
+			{
+				Console.Write("Enter UserName: ");
+				userName = Console.ReadLine();
+			}
+			if (string.IsNullOrEmpty(password))
+			{
+				Console.Write("Enter Password: ");
+				password = ReadPassword();
+				Console.WriteLine();
+			}
 
 			Console.WriteLine("Options: ");
 			Console.WriteLine("confirmdownload: " + confirmDownload);
