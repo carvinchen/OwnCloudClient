@@ -12,13 +12,19 @@ namespace OwnCloudClient
 		{
 			get
 			{
-				if (_watchDir != null)
-					return _watchDir;
+				string retVal = "";
 
-				if (ConfigurationManager.AppSettings.AllKeys.Contains("WatchDir"))
-					return ConfigurationManager.AppSettings["WatchDir"].ToString();
+				if (_watchDir != null)
+					retVal = _watchDir;
+				else if (ConfigurationManager.AppSettings.AllKeys.Contains("WatchDir"))
+					retVal = ConfigurationManager.AppSettings["WatchDir"].ToString();
 				else
-					return Environment.CurrentDirectory + "\\data\\";
+					retVal = Environment.CurrentDirectory + "\\data\\";
+
+				if (!retVal.EndsWith("\\") && !retVal.EndsWith("/"))
+					retVal = retVal + "\\";
+
+				return retVal;
 			}
 			set
 			{
@@ -32,13 +38,19 @@ namespace OwnCloudClient
 		{
 			get
 			{
-				if (_ownCloudUrl != null)
-					return _ownCloudUrl;
+				string retVal = "";
 
-				if (ConfigurationManager.AppSettings.AllKeys.Contains("OwnCloudUrl"))
-					return ConfigurationManager.AppSettings["OwnCloudUrl"].ToString();
+				if (_ownCloudUrl != null)
+					retVal = _ownCloudUrl;
+				else if (ConfigurationManager.AppSettings.AllKeys.Contains("OwnCloudUrl"))
+					retVal = ConfigurationManager.AppSettings["OwnCloudUrl"].ToString();
 				else
 					throw new Exception("Cannot find url in config file");
+
+				if (!retVal.EndsWith("/"))
+					retVal = retVal + "/";
+
+				return retVal;
 			}
 			set
 			{
@@ -102,7 +114,7 @@ namespace OwnCloudClient
 			get
 			{
 				if (ConfigurationManager.AppSettings.AllKeys.Contains("SleepSeconds"))
-					return Convert.ToInt32(ConfigurationManager.AppSettings["MassDownload"].ToString());
+					return Convert.ToInt32(ConfigurationManager.AppSettings["SleepSeconds"].ToString());
 				return 10;
 			}
 		}

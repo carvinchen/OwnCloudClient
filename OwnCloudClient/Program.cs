@@ -290,6 +290,8 @@ namespace OwnCloudClient
 				Console.WriteLine("runonce");
 				Console.WriteLine("massdownload");
 				Console.WriteLine("sleepseconds");
+				Console.WriteLine("watchdir");
+				Console.WriteLine("baseurl");
 				return;
 			}
 			catch (Exception exception2)
