@@ -1,0 +1,15 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace DirectorySync
+{
+	public class FileInfoX
+	{
+		public string CloudNamePlusDate { get; set; }
+		public string CloudName { get; set; }
+		public DateTime LastModified { get; set; }
+		public string FileName { get; set; }
+	}
+}
