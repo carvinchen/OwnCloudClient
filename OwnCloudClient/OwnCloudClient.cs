@@ -8,19 +8,16 @@ using System.IO;
 using System.Security.Cryptography;
 using Newtonsoft.Json.Linq;
 
-namespace DirectorySync
+namespace OwnCloudClient
 {
 	public static class OwnCloudClient
 	{
 		private static string phpId = null;
-		public static readonly string DATA_PATH = Environment.CurrentDirectory + "\\data\\";
-		private static readonly string DATA_PREFIX = @"data\";
-		private static readonly string OWNCLOUD_URL = "";
 
 		private static string GetLocalFilePathFromCloudFileNamePlusDate(string cloudFileNamePlusDate)
 		{
 			//!FileNameProcessing
-			return DATA_PREFIX + cloudFileNamePlusDate.Substring(0, cloudFileNamePlusDate.Length - (4 + 13));
+			return Settings.WatchDir + cloudFileNamePlusDate.Substring(0, cloudFileNamePlusDate.Length - (4 + 13));
 		}
 
 		private static DateTime GetDateTimeFromCloudFilePlusDate(string cloudFileNamePlusDate)
@@ -67,7 +64,7 @@ namespace DirectorySync
 			//wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
 			//string response = wc.UploadString(OWNCLOUD_URL, "POST", sb.ToString());
 
-			WebRequest request = WebRequest.Create(OWNCLOUD_URL);
+			WebRequest request = WebRequest.Create(Settings.OwnCloudUrl);
 			((HttpWebRequest)request).AllowAutoRedirect = false;
 
 			//http://www.velocityreviews.com/forums/t302174-why-do-i-get-the-server-committed-a-protocol-violation.html
@@ -100,7 +97,7 @@ namespace DirectorySync
 			string id = string.Empty;
 			using (WebClient wc = new WebClient())
 			{
-				wc.OpenRead(OWNCLOUD_URL);
+				wc.OpenRead(Settings.OwnCloudUrl);
 
 				foreach (string s in wc.ResponseHeaders.AllKeys)
 				{
@@ -133,19 +130,19 @@ namespace DirectorySync
 					wc.Headers.Add("Pragma: no-cache");
 					wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
 					NLogger.Current.Info(string.Format("Downloading {0}", cloudFileNamePlusDate));
-					Uri uri = new Uri(string.Concat(OWNCLOUD_URL, "files/api.php?action=get&dir=&file=", cloudFileNamePlusDate));
-					wc.DownloadFile(uri, DATA_PREFIX + cloudFileNamePlusDate);
+					Uri uri = new Uri(string.Concat(Settings.OwnCloudUrl, "files/api.php?action=get&dir=&file=", cloudFileNamePlusDate));
+					wc.DownloadFile(uri, Settings.WatchDir + cloudFileNamePlusDate);
 				}
 
-				byte[] decryptedContents = Encryption.DecryptFile(DATA_PREFIX + cloudFileNamePlusDate);
-				System.IO.File.Delete(DATA_PREFIX + cloudFileNamePlusDate);
+				byte[] decryptedContents = Encryption.DecryptFile(Settings.WatchDir + cloudFileNamePlusDate);
+				System.IO.File.Delete(Settings.WatchDir + cloudFileNamePlusDate);
 
 				if (cloudFileNamePlusDate.Contains('~'))
 				{
 					cloudFileNamePlusDate = cloudFileNamePlusDate.Replace('~', '\\');
 					string fileDirectory = cloudFileNamePlusDate.Substring(0, cloudFileNamePlusDate.LastIndexOf('\\'));
 
-					string currentPath = DATA_PREFIX + fileDirectory; ;
+					string currentPath = Settings.WatchDir + fileDirectory; ;
 					if (!System.IO.Directory.Exists(currentPath))
 						System.IO.Directory.CreateDirectory(currentPath);
 				}
@@ -172,7 +169,7 @@ namespace DirectorySync
 			{
 				wc.Headers.Add("Pragma: no-cache");
 				wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
-				json = wc.DownloadString(string.Concat(OWNCLOUD_URL, "files/api.php?action=getfiles&dir="));
+				json = wc.DownloadString(string.Concat(Settings.OwnCloudUrl, "files/api.php?action=getfiles&dir="));
 			}
 
 			JObject o = JObject.Parse(json);
@@ -214,7 +211,7 @@ namespace DirectorySync
 
 			FileInfo fi = new FileInfo(localFullPath);
 			decimal kbSize = Math.Round(Convert.ToDecimal(fi.Length) / Convert.ToDecimal(Math.Pow(2, 10)), 2);
-			NLogger.Current.Info(string.Format("Uploading {0} [{1} KiB]", localFullPath.Replace(DATA_PATH, ""), kbSize));
+			NLogger.Current.Info(string.Format("Uploading {0} [{1} KiB]", localFullPath.Replace(Settings.WatchDir, ""), kbSize));
 
 			if (!System.IO.File.Exists(localFullPath))
 			{
@@ -234,21 +231,21 @@ namespace DirectorySync
 				byte[] encrypted = Encryption.EncryptFile(localFullPath);
 
 				//!FileNameProcessing
-				string tmpFileName = localFullPath.Replace(DATA_PATH, "").Replace('\\', '~') +
+				string tmpFileName = localFullPath.Replace(Settings.WatchDir, "").Replace('\\', '~') +
 							".enc" + 
 							"." + GetUnixTimeStamp(fi.LastWriteTime);
-				
-				System.IO.File.WriteAllBytes(DATA_PREFIX + tmpFileName, encrypted);
+
+				System.IO.File.WriteAllBytes(Settings.WatchDir + tmpFileName, encrypted);
 
 				using (MyWebClient wc = new MyWebClient(200000))
 				{
 					wc.Headers.Add("Pragma: no-cache");
 					wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
 
-					byte[] response = wc.UploadFile(new Uri(OWNCLOUD_URL + "files/upload.php?dir="), DATA_PREFIX + tmpFileName);
+					byte[] response = wc.UploadFile(new Uri(Settings.OwnCloudUrl + "files/upload.php?dir="), Settings.WatchDir + tmpFileName);
 					status = Encoding.ASCII.GetString(response) == "\n\ntrue" ? UploadFileStatus.Success : UploadFileStatus.UnknownError;
 				}
-				System.IO.File.Delete(DATA_PREFIX + tmpFileName);
+				System.IO.File.Delete(Settings.WatchDir + tmpFileName);
 			}
 
 			if (status == UploadFileStatus.Success)
@@ -268,8 +265,8 @@ namespace DirectorySync
 				wc.Headers.Add("Pragma: no-cache");
 				wc.Headers.Add("Content-Type: application/x-www-form-urlencoded");
 				wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
-				wc.Headers.Add(string.Format("Referer: {0}", OWNCLOUD_URL));
-				string response = wc.UploadString(OWNCLOUD_URL + "files/api.php", "POST", data3);
+				wc.Headers.Add(string.Format("Referer: {0}", Settings.OwnCloudUrl));
+				string response = wc.UploadString(Settings.OwnCloudUrl + "files/api.php", "POST", data3);
 				success = response == "true";
 			}
 			if (success)

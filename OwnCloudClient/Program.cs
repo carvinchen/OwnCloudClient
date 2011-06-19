@@ -5,7 +5,7 @@ using System.Text;
 using System.Timers;
 using Heyes;
 
-namespace DirectorySync
+namespace OwnCloudClient
 {
 	class Program
 	{
@@ -14,7 +14,7 @@ namespace DirectorySync
 		static List<FileInfoX> LoadLocals()
 		{
 			List<FileInfoX> files = new List<FileInfoX>();
-			foreach (var item in System.IO.Directory.EnumerateFileSystemEntries(OwnCloudClient.DATA_PATH, "*", System.IO.SearchOption.AllDirectories))
+			foreach (var item in System.IO.Directory.EnumerateFileSystemEntries(Settings.WatchDir, "*", System.IO.SearchOption.AllDirectories))
 			{
 				System.IO.FileInfo info = new System.IO.FileInfo(item);
 				if (!info.Exists)
@@ -26,9 +26,9 @@ namespace DirectorySync
 				DateTime lastWrite = new DateTime(info.LastWriteTime.Year, info.LastWriteTime.Month, info.LastWriteTime.Day, info.LastWriteTime.Hour, info.LastWriteTime.Minute, info.LastWriteTime.Second); //do it this way to avoid milisecond comparison problemsinfo.LastWriteTime;
 
 				//!FileNameProcessing
-				x.CloudName = item.Replace(OwnCloudClient.DATA_PATH, "").Replace('\\', '~') + ".enc";
+				x.CloudName = item.Replace(Settings.WatchDir, "").Replace('\\', '~') + ".enc";
 				x.LastModified = lastWrite;
-				x.FileName = item.Replace(OwnCloudClient.DATA_PATH, "");
+				x.FileName = item.Replace(Settings.WatchDir, "");
 				x.CloudNamePlusDate = x.CloudName + "." + OwnCloudClient.GetUnixTimeStamp(lastWrite);
 				files.Add(x);
 			}
@@ -130,7 +130,7 @@ namespace DirectorySync
 			foreach (var d in confirmed)
 			{
 				OwnCloudClient.DeleteFile(d.Key); //OldNameCloudName
-				OwnCloudClient.UploadFile(OwnCloudClient.DATA_PATH + d.Value); //NewFileName
+				OwnCloudClient.UploadFile(Settings.WatchDir + d.Value); //NewFileName
 			}
 			return confirmed.Count;
 		}
@@ -176,7 +176,7 @@ namespace DirectorySync
 					var toDeleteX = remoteFiles.Where(y => y.CloudName == x.CloudName).FirstOrDefault();
 					OwnCloudClient.DeleteFile(toDeleteX.CloudNamePlusDate);
 				}
-				string f = OwnCloudClient.DATA_PATH + x.FileName;
+				string f = Settings.WatchDir + x.FileName;
 				UploadFileStatus status = OwnCloudClient.UploadFile(f);
 			}
 			return confirmedToUpload.Count;
@@ -235,12 +235,12 @@ namespace DirectorySync
 
 		static void Main(string[] args)
 		{
-			bool confirmDownload = true;
-			bool confirmUpload = true;
-			bool confirmDelete = true;
-			bool runOnce = false;
-			bool massDownload = false;
-			int sleepSeconds = 10;
+			bool confirmDownload = !Settings.NoConfirmDownload;
+			bool confirmUpload = !Settings.NoConfirmUpload;
+			bool confirmDelete = !Settings.NoConfirmDelete;
+			bool runOnce = Settings.RunOnce;
+			bool massDownload = Settings.MassDownload;
+			int sleepSeconds = Settings.SleepSeconds;
 
 			string userName = "";
 			string password = "";
@@ -248,14 +248,32 @@ namespace DirectorySync
 			GetOpt parser = new GetOpt(args);
 			try
 			{
-				parser.SetOpts(new string[] { "noconfirmdownload", "noconfirmupload", "noconfirmdelete", "runonce", "massdownload", "sleepseconds=" });
+				parser.SetOpts(new string[] {	"noconfirmdownload", 
+												"noconfirmupload", 
+												"noconfirmdelete", 
+												"runonce", 
+												"massdownload", 
+												"sleepseconds=",
+												"watchdir=",
+												"baseurl="
+
+				});
 				parser.Parse();
 
-				confirmDownload = !parser.IsDefined("noconfirmdownload");
-				confirmUpload = !parser.IsDefined("noconfirmupload");
-				confirmDelete = !parser.IsDefined("noconfirmdelete");
-				runOnce = parser.IsDefined("runonce");
-				massDownload = parser.IsDefined("massdownload");
+				if (parser.IsDefined("noconfirmdownload"))
+					confirmDownload = false;
+				if (parser.IsDefined("noconfirmupload"))
+					confirmUpload = false;
+				if (parser.IsDefined("noconfirmdelete"))
+					confirmDelete = false;
+				if (parser.IsDefined("runonce"))
+					runOnce = true;
+				if (parser.IsDefined("massdownload"))
+					massDownload = true;
+				if (parser.IsDefined("watchdir"))
+					Settings.WatchDir = parser.Opts["watchdir"].ToString();
+				if (parser.IsDefined("baseurl"))
+					Settings.OwnCloudUrl = parser.Opts["baseurl"].ToString();
 
 				if (parser.IsDefined("sleepseconds"))
 					sleepSeconds = Convert.ToInt32(parser.Opts["sleepseconds"].ToString());

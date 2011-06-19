@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using NLog;
 
-namespace DirectorySync
+namespace OwnCloudClient
 {
 	public static class NLogger
 	{

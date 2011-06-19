@@ -5,7 +5,7 @@ using System.Text;
 using System.Security.Cryptography;
 using System.IO;
 
-namespace DirectorySync
+namespace OwnCloudClient
 {
 	public static class Encryption
 	{
