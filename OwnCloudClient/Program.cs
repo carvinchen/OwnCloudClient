@@ -93,13 +93,20 @@ namespace OwnCloudClient
 		//files that have older versions in the cloud -- upload the new ones and delete the old outdated cloud files
 		static int ProcessOutDatedRemoteFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool confirmUpload)
 		{
-			var remoteQuery = from l in localFiles
+			var remoteQuery = (from l in localFiles
 							  join r in remoteFiles on l.CloudName equals r.CloudName
 							  where (l.LastModified - r.LastModified).Seconds >= 2
-							  select new { OldCloudNamePlusDate = r.CloudNamePlusDate, NewFileName = r.FileName };
+							  select new { OldCloudNamePlusDate = r.CloudNamePlusDate, NewFileName = r.FileName }).ToList();
 
 			bool assumeConfirmed = !confirmUpload;
 			Dictionary<string, string> confirmed = new Dictionary<string, string>();
+
+			if (remoteQuery.Count > 0)
+			{
+				Console.WriteLine("Found Uploads:");
+				foreach (var xyz in remoteQuery)
+					Console.WriteLine(xyz.NewFileName);
+			}
 
 			foreach (var xyz in remoteQuery)
 			{
@@ -125,8 +132,6 @@ namespace OwnCloudClient
 				}
 			}
 
-			if (confirmed.Count > 0)
-				Console.WriteLine("Found Uploads:");
 			foreach (var d in confirmed)
 			{
 				OwnCloudClient.DeleteFile(d.Key); //OldNameCloudName
@@ -144,7 +149,11 @@ namespace OwnCloudClient
 							  select r).ToList();
 
 			if (localQuery.Count > 0)
+			{
 				Console.WriteLine("Found Downloads:");
+				foreach (var x in localQuery)
+					Console.WriteLine(x.FileName);
+			}
 
 			List<FileInfoX> confirmedToDownload = localQuery;
 			if (confirmDownload)
@@ -163,7 +172,11 @@ namespace OwnCloudClient
 			var toUpload = localFiles.Where(x => !remoteFiles.Select(y => y.CloudName).Contains(x.CloudName) || x.LastModified > lastSweep).ToList();
 
 			if (toUpload.Count > 0)
+			{
 				Console.WriteLine("Found Uploads:");
+				foreach (var u in toUpload)
+					Console.WriteLine(u.FileName);
+			}
 
 			List<FileInfoX> confirmedToUpload = toUpload;
 			if (askUpload)
@@ -187,7 +200,11 @@ namespace OwnCloudClient
 		{
 			var toDelete = remoteFiles.Where(x => !localFiles.Select(y => y.CloudName).Contains(x.CloudName)).ToList();
 			if (toDelete.Count > 0)
+			{
 				Console.WriteLine("Found Deletes:");
+				foreach (var d in toDelete)
+					Console.WriteLine(d.FileName);
+			}
 
 			List<FileInfoX> confirmedToDelete = toDelete;
 			if (confirmDelete)
