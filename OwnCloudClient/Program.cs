@@ -42,14 +42,15 @@ namespace OwnCloudClient
 
 		public static void PrintSampleUseage()
 		{
-			Console.WriteLine("--noconfirmdownload");
-			Console.WriteLine("--noconfirmupload");
-			Console.WriteLine("--noconfirmdelete");
-			Console.WriteLine("--runonce");
-			Console.WriteLine("--massdownload");
-			Console.WriteLine("--sleepseconds=10");
-			Console.WriteLine("--watchdir=C:\\temp\\");
-			Console.WriteLine("--owncloudurl=https://xyz.owncloud.org/user/");
+			Console.WriteLine("Unless downloadonly or runonce flags are set, program will continue to monitor changes");
+			Console.WriteLine("--noconfirmdownload\t[flag] Don't ask about downloading files to local disk");
+			Console.WriteLine("--noconfirmupload\t[flag] Don't ask about uploading files to OwnCloud");
+			Console.WriteLine("--noconfirmdelete\t[flag] Don't ask about deleting remote files");
+			Console.WriteLine("--runonce\t\t[flag] Run all checks once and then exit - otherwise sleep for [sleepseconds] and run again");
+			Console.WriteLine("--downloadonly\t\t[flag] Download all changed/new files hosted in OwnCloud and exit");
+			Console.WriteLine("--sleepseconds\t\tNumber of seconds to wait before checking for changes (default = 10)");
+			Console.WriteLine("--watchdir=\t\tThe directory (recursive) to watch for changes (default currentDir\\data\\)");
+			Console.WriteLine("--owncloudurl\t\tThe URL to your OwnCloud instance");
 		}
 
 		public static void PrintCurrentSettings()
@@ -59,7 +60,7 @@ namespace OwnCloudClient
 			NLogger.Current.Debug("confirmupload: " + !Settings.NoConfirmUpload);
 			NLogger.Current.Debug("confirmdelete: " + !Settings.NoConfirmDelete);
 			NLogger.Current.Debug("runonce: " + Settings.RunOnce);
-			NLogger.Current.Debug("massdownload: " + Settings.MassDownload);
+			NLogger.Current.Debug("downloadonly: " + Settings.DownloadOnly);
 			NLogger.Current.Debug("sleepSeconds: " + Settings.SleepSeconds);
 			NLogger.Current.Debug("watchdir: " + Settings.WatchDir);
 			NLogger.Current.Debug("owncloudurl: " + Settings.OwnCloudUrl);
@@ -77,7 +78,7 @@ namespace OwnCloudClient
 					"noconfirmupload", 
 					"noconfirmdelete", 
 					"runonce", 
-					"massdownload", 
+					"downloadonly", 
 					"sleepseconds=",
 					"watchdir=",
 					"owncloudurl=",
@@ -100,8 +101,8 @@ namespace OwnCloudClient
 					Settings.NoConfirmDelete = true;
 				if (parser.IsDefined("runonce"))
 					Settings.RunOnce = true;
-				if (parser.IsDefined("massdownload"))
-					Settings.MassDownload = true;
+				if (parser.IsDefined("downloadonly"))
+					Settings.DownloadOnly = true;
 				if (parser.IsDefined("watchdir"))
 					Settings.WatchDir = parser.Opts["watchdir"].ToString();
 				if (parser.IsDefined("owncloudurl"))
@@ -151,7 +152,7 @@ namespace OwnCloudClient
 				return;
 			}
 
-			if (Settings.MassDownload)
+			if (Settings.DownloadOnly)
 			{
 				//OwnCloudClient.DownloadAll("vccdrom~");
 				NLogger.Current.Warn("Warning: This may overwrite files in your local directory: Continue? [y/n]: ");

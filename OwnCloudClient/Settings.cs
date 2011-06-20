@@ -136,24 +136,24 @@ namespace OwnCloudClient
 			}
 		} private static bool? _runOnce = null;
 
-		public static bool MassDownload
+		public static bool DownloadOnly
 		{
 			get
 			{
-				if (_massDownload.HasValue)
-					return _massDownload.Value;
-				if (ConfigurationManager.AppSettings.AllKeys.Contains("MassDownload"))
-					return ConfigurationManager.AppSettings["MassDownload"].ToString() == "true";
+				if (_downloadOnly.HasValue)
+					return _downloadOnly.Value;
+				if (ConfigurationManager.AppSettings.AllKeys.Contains("DownloadOnly"))
+					return ConfigurationManager.AppSettings["DownloadOnly"].ToString() == "true";
 				return false;
 			}
 			set
 			{
-				if (!_massDownload.HasValue)
-					_massDownload = value;
+				if (!_downloadOnly.HasValue)
+					_downloadOnly = value;
 				else
-					throw new Exception("MassDownload was specified more than once");
+					throw new Exception("DownloadOnly was specified more than once");
 			}
-		} private static bool? _massDownload = null;
+		} private static bool? _downloadOnly = null;
 
 		public static int SleepSeconds
 		{
