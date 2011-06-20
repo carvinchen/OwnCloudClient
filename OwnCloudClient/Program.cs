@@ -103,9 +103,9 @@ namespace OwnCloudClient
 
 			if (remoteQuery.Count > 0)
 			{
-				Console.WriteLine("Found Uploads:");
+				NLogger.Current.Info("Found Uploads:");
 				foreach (var xyz in remoteQuery)
-					Console.WriteLine(xyz.NewFileName);
+					NLogger.Current.Info(xyz.NewFileName);
 			}
 
 			foreach (var xyz in remoteQuery)
@@ -152,9 +152,9 @@ namespace OwnCloudClient
 
 			if (shouldDownloadLocalQuery.Count > 0)
 			{
-				Console.WriteLine("Found Downloads:");
+				NLogger.Current.Info("Found Downloads:");
 				foreach (var x in localQuery)
-					Console.WriteLine(x.FileName);
+					NLogger.Current.Info(x.FileName);
 			}
 
 			List<FileInfoX> confirmedToDownload = shouldDownloadLocalQuery;
@@ -175,9 +175,9 @@ namespace OwnCloudClient
 
 			if (toUpload.Count > 0)
 			{
-				Console.WriteLine("Found Uploads:");
+				NLogger.Current.Info("Found Uploads:");
 				foreach (var u in toUpload)
-					Console.WriteLine(u.FileName);
+					NLogger.Current.Info(u.FileName);
 			}
 
 			List<FileInfoX> confirmedToUpload = toUpload;
@@ -203,9 +203,9 @@ namespace OwnCloudClient
 			var toDelete = remoteFiles.Where(x => !localFiles.Select(y => y.CloudName).Contains(x.CloudName)).ToList();
 			if (toDelete.Count > 0)
 			{
-				Console.WriteLine("Found Deletes:");
+				NLogger.Current.Info("Found Deletes:");
 				foreach (var d in toDelete)
-					Console.WriteLine(d.FileName);
+					NLogger.Current.Info(d.FileName);
 			}
 
 			List<FileInfoX> confirmedToDelete = toDelete;
@@ -299,9 +299,9 @@ namespace OwnCloudClient
 				if (sleepSeconds < 10)
 					sleepSeconds = 10;
 			}
-			catch (ArgumentException exception)
+			catch (ArgumentException ex)
 			{
-				Console.WriteLine(exception.Message);
+				NLogger.Current.FatalException("Argument Exception", ex);
 
 				Console.WriteLine("noconfirmdownload");
 				Console.WriteLine("noconfirmupload");
@@ -313,10 +313,9 @@ namespace OwnCloudClient
 				Console.WriteLine("baseurl");
 				return;
 			}
-			catch (Exception exception2)
+			catch (Exception ex)
 			{
-				Console.WriteLine("Fatal Error:");
-				Console.WriteLine(exception2.ToString());
+				NLogger.Current.FatalException("GetOpt Exception", ex);
 			}
 
 			if (string.IsNullOrEmpty(userName))
