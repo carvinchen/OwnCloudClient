@@ -1,0 +1,9 @@
+OwnCloud (http://owncloud.org) Client
+
+Code currently working for version 1.2 [http://owncloud.org/releases/owncloud-1.2.tar.bz2]
+
+1. Install OwnCloud version 1.2 per http://owncloud.org/index.php/Installation
+2. Create an OwnCloud user on your new site
+3. Compile OwnCloudClient.exe
+4. Run: owncloudclient.exe --baseurl=https://yoursite.com/path-to-owncloud
+5. See owncloudclient.exe --help for more options
