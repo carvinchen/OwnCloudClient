@@ -306,7 +306,7 @@ namespace OwnCloudClient
 			if (System.IO.File.Exists(fname))
 			{
 				System.IO.FileInfo info = new FileInfo(fname);
-				shouldDownload = info.LastAccessTime < f.LastModified;
+				shouldDownload = info.LastWriteTime < f.LastModified;
 			}
 			else
 			{
