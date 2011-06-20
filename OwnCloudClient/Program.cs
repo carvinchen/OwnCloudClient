@@ -40,101 +40,111 @@ namespace OwnCloudClient
 			return string.Join(string.Empty, password);
 		}
 
-		static void Main(string[] args)
+		public static void SampleUseage()
 		{
-			bool confirmDownload = !Settings.NoConfirmDownload;
-			bool confirmUpload = !Settings.NoConfirmUpload;
-			bool confirmDelete = !Settings.NoConfirmDelete;
-			bool runOnce = Settings.RunOnce;
-			bool massDownload = Settings.MassDownload;
-			int sleepSeconds = Settings.SleepSeconds;
+			Console.WriteLine("--noconfirmdownload");
+			Console.WriteLine("--noconfirmupload");
+			Console.WriteLine("--noconfirmdelete");
+			Console.WriteLine("--runonce");
+			Console.WriteLine("--massdownload");
+			Console.WriteLine("--sleepseconds=10");
+			Console.WriteLine("--watchdir=C:\\temp\\");
+			Console.WriteLine("--baseurl=https://xyz.owncloud.org/user/");
+		}
 
-			string userName = Settings.UserName;
-			string password = Settings.Password;
+		public static void PrintCurrentSettings()
+		{
+			NLogger.Current.Debug("Options: ");
+			NLogger.Current.Debug("confirmdownload: " + !Settings.NoConfirmDownload);
+			NLogger.Current.Debug("confirmupload: " + !Settings.NoConfirmUpload);
+			NLogger.Current.Debug("confirmdelete: " + !Settings.NoConfirmDelete);
+			NLogger.Current.Debug("runonce: " + Settings.RunOnce);
+			NLogger.Current.Debug("massdownload: " + Settings.MassDownload);
+			NLogger.Current.Debug("sleepSeconds: " + Settings.SleepSeconds);
+			NLogger.Current.Debug("watchdir: " + Settings.WatchDir);
+			NLogger.Current.Debug("baseurl: " + Settings.OwnCloudUrl);
+		}
+
+		public static bool SetSettings(string[] args)
+		{
+			bool success = true;
 
 			GetOpt parser = new GetOpt(args);
 			try
 			{
-				parser.SetOpts(new string[] {	"noconfirmdownload", 
-												"noconfirmupload", 
-												"noconfirmdelete", 
-												"runonce", 
-												"massdownload", 
-												"sleepseconds=",
-												"watchdir=",
-												"baseurl="
-
+				parser.SetOpts(new string[] {	
+					"noconfirmdownload", 
+					"noconfirmupload", 
+					"noconfirmdelete", 
+					"runonce", 
+					"massdownload", 
+					"sleepseconds=",
+					"watchdir=",
+					"baseurl="
 				});
+
 				parser.Parse();
 
 				if (parser.IsDefined("noconfirmdownload"))
-					confirmDownload = false;
+					Settings.NoConfirmDownload = true;
 				if (parser.IsDefined("noconfirmupload"))
-					confirmUpload = false;
+					Settings.NoConfirmUpload = true;
 				if (parser.IsDefined("noconfirmdelete"))
-					confirmDelete = false;
+					Settings.NoConfirmDelete = true;
 				if (parser.IsDefined("runonce"))
-					runOnce = true;
+					Settings.RunOnce = true;
 				if (parser.IsDefined("massdownload"))
-					massDownload = true;
+					Settings.MassDownload = true;
 				if (parser.IsDefined("watchdir"))
 					Settings.WatchDir = parser.Opts["watchdir"].ToString();
 				if (parser.IsDefined("baseurl"))
 					Settings.OwnCloudUrl = parser.Opts["baseurl"].ToString();
-
 				if (parser.IsDefined("sleepseconds"))
-					sleepSeconds = Convert.ToInt32(parser.Opts["sleepseconds"].ToString());
-				if (sleepSeconds < 10)
-					sleepSeconds = 10;
+					Settings.SleepSeconds = Convert.ToInt32(parser.Opts["sleepseconds"].ToString());
+			
 			}
 			catch (ArgumentException ex)
 			{
 				NLogger.Current.FatalException("Argument Exception", ex);
 
-				Console.WriteLine("noconfirmdownload");
-				Console.WriteLine("noconfirmupload");
-				Console.WriteLine("noconfirmdelete");
-				Console.WriteLine("runonce");
-				Console.WriteLine("massdownload");
-				Console.WriteLine("sleepseconds");
-				Console.WriteLine("watchdir");
-				Console.WriteLine("baseurl");
-				return;
+				SampleUseage();
+				success = false;
 			}
 			catch (Exception ex)
 			{
 				NLogger.Current.FatalException("GetOpt Exception", ex);
+				success = false;
 			}
 
-			if (string.IsNullOrEmpty(userName))
+			if (string.IsNullOrEmpty(Settings.UserName))
 			{
 				Console.Write("Enter UserName: ");
-				userName = Console.ReadLine();
+				Settings.UserName = Console.ReadLine();
 			}
-			if (string.IsNullOrEmpty(password))
+			if (string.IsNullOrEmpty(Settings.Password))
 			{
 				Console.Write("Enter Password: ");
-				password = ReadPassword();
+				Settings.Password = ReadPassword();
 				Console.WriteLine();
 			}
 
-			NLogger.Current.Debug("Options: ");
-			NLogger.Current.Debug("confirmdownload: " + confirmDownload);
-			NLogger.Current.Debug("confirmupload: " + confirmUpload);
-			NLogger.Current.Debug("confirmdelete: " + confirmDelete);
-			NLogger.Current.Debug("runonce: " + runOnce);
-			NLogger.Current.Debug("massdownload: " + massDownload);
-			NLogger.Current.Debug("sleepSeconds: " + sleepSeconds);
-			NLogger.Current.Debug("watchdir: " + Settings.WatchDir);
-			NLogger.Current.Debug("baseurl: " + Settings.OwnCloudUrl);
+			return success;
+		}
 
-			if (!OwnCloudClient.Login(userName, password))
+		static void Main(string[] args)
+		{
+			if (!SetSettings(args))
+				return;
+
+			PrintCurrentSettings();
+
+			if (!OwnCloudClient.Login(Settings.UserName, Settings.Password))
 			{
 				NLogger.Current.Warn("Invalid username or password");
 				return;
 			}
 
-			if (massDownload)
+			if (Settings.MassDownload)
 			{
 				//OwnCloudClient.DownloadAll("vccdrom~");
 				NLogger.Current.Warn("Warning: This may overwrite files in your local directory: Continue? [y/n]: ");
@@ -156,13 +166,13 @@ namespace OwnCloudClient
 
 			//outdated checks only need to run at the beginning since we are checking with lastSweep
 			//NOTE: if used with multiple users on the same cloud account this becomes problematic
-			int updatedRemoteFiles = FileProcessingHelpers.ProcessOutDatedRemoteFiles(localFiles, remoteFiles, confirmUpload);
+			int updatedRemoteFiles = FileProcessingHelpers.ProcessOutDatedRemoteFiles(localFiles, remoteFiles, !Settings.NoConfirmUpload);
 			if (updatedRemoteFiles > 0)
 			{
 				NLogger.Current.Trace("Refreshing remotes");
 				remoteFiles = OwnCloudClient.GetRemoteFileList(); //refresh
 			}
-			int updatedLocalFiles = FileProcessingHelpers.ProcessOutDatedLocalFiles(localFiles, remoteFiles, confirmDownload);
+			int updatedLocalFiles = FileProcessingHelpers.ProcessOutDatedLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmDownload);
 
 			DateTime lastSweep = DateTime.Now;
 			while (true)
@@ -170,10 +180,10 @@ namespace OwnCloudClient
 				NLogger.Current.Trace("Refreshing locals");
 				localFiles = OwnCloudClient.GetLocalFileList();
 
-				int uploadCount = FileProcessingHelpers.ProcessNewLocalFiles(localFiles, remoteFiles, confirmUpload, lastSweep);
-				int deleteCount = FileProcessingHelpers.ProcessDeleteRemoteFiles(localFiles, remoteFiles, confirmDelete);
+				int uploadCount = FileProcessingHelpers.ProcessNewLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmUpload, lastSweep);
+				int deleteCount = FileProcessingHelpers.ProcessDeleteRemoteFiles(localFiles, remoteFiles, !Settings.NoConfirmDelete);
 
-				if (runOnce)
+				if (Settings.RunOnce)
 					return; //bail out of program
 
 				if (uploadCount > 0 || deleteCount > 0)
@@ -183,8 +193,7 @@ namespace OwnCloudClient
 				}
 
 				lastSweep = DateTime.Now;
-				System.Threading.Thread.Sleep(1000 * sleepSeconds);
-
+				System.Threading.Thread.Sleep(1000 * Settings.SleepSeconds);
 			}
 		}
 	}

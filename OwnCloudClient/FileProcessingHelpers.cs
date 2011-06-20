@@ -11,7 +11,7 @@ namespace OwnCloudClient
 
 		private static ConfirmAnswer GetAnswer(string fileName)
 		{
-			Console.Write(" [c]onfirm/[s]kip/confirm [a]ll/s[k]ip all: ");
+			Console.Write(" [c]onfirm, [s]kip, confirm [a]ll, s[k]ip all: ");
 			ConsoleKeyInfo k = Console.ReadKey();
 			Console.WriteLine();
 			switch (Convert.ToChar(k.Key))

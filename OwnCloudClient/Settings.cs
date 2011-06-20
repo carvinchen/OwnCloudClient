@@ -64,79 +64,153 @@ namespace OwnCloudClient
 		{
 			get
 			{
+				if (_noConfirmDownload.HasValue)
+					return _noConfirmDownload.Value;
 				if (ConfigurationManager.AppSettings.AllKeys.Contains("NoConfirmDownload"))
 					return ConfigurationManager.AppSettings["NoConfirmDownload"].ToString() == "true";
 				return false;
 			}
-		}
+			set
+			{
+				if (!_noConfirmDownload.HasValue)
+					_noConfirmDownload = value;
+				else
+					throw new Exception("NoConfirmDownload was specified more than once");
+			}
+		} private static bool? _noConfirmDownload = null;
 
 		public static bool NoConfirmDelete
 		{
 			get
 			{
+				if (_noConfirmDelete.HasValue)
+					return _noConfirmDelete.Value;
 				if (ConfigurationManager.AppSettings.AllKeys.Contains("NoConfirmDelete"))
 					return ConfigurationManager.AppSettings["NoConfirmDelete"].ToString() == "true";
 				return false;
 			}
-		}
+			set
+			{
+				if (!_noConfirmDelete.HasValue)
+					_noConfirmDelete = value;
+				else
+					throw new Exception("NoConfirmDelete was specified more than once");
+			}
+		} private static bool? _noConfirmDelete = null;
 
 		public static bool NoConfirmUpload
 		{
 			get
 			{
+				if (_noConfirmUpload.HasValue)
+					return _noConfirmUpload.Value;
 				if (ConfigurationManager.AppSettings.AllKeys.Contains("NoConfirmUpload"))
 					return ConfigurationManager.AppSettings["NoConfirmUpload"].ToString() == "true";
 				return false;
 			}
-		}
+			set
+			{
+				if (!_noConfirmUpload.HasValue)
+					_noConfirmUpload = value;
+				else
+					throw new Exception("NoConfirmUpload was specified more than once");
+			}
+		} private static bool? _noConfirmUpload = null;
 
 		public static bool RunOnce
 		{
 			get
 			{
+				if (_runOnce.HasValue)
+					return _runOnce.Value;
 				if (ConfigurationManager.AppSettings.AllKeys.Contains("RunOnce"))
 					return ConfigurationManager.AppSettings["RunOnce"].ToString() == "true";
 				return false;
 			}
-		}
+			set
+			{
+				if (!_runOnce.HasValue)
+					_runOnce = value;
+				else
+					throw new Exception("RunOnce was specified more than once");
+			}
+		} private static bool? _runOnce = null;
+
 		public static bool MassDownload
 		{
 			get
 			{
+				if (_massDownload.HasValue)
+					return _massDownload.Value;
 				if (ConfigurationManager.AppSettings.AllKeys.Contains("MassDownload"))
 					return ConfigurationManager.AppSettings["MassDownload"].ToString() == "true";
 				return false;
 			}
-		}
+			set
+			{
+				if (!_massDownload.HasValue)
+					_massDownload = value;
+				else
+					throw new Exception("MassDownload was specified more than once");
+			}
+		} private static bool? _massDownload = null;
 
 		public static int SleepSeconds
 		{
 			get
 			{
+				if (_sleepSeconds.HasValue)
+					return _sleepSeconds.Value;
 				if (ConfigurationManager.AppSettings.AllKeys.Contains("SleepSeconds"))
 					return Convert.ToInt32(ConfigurationManager.AppSettings["SleepSeconds"].ToString());
 				return 10;
 			}
-		}
+			set
+			{
+				if (!_sleepSeconds.HasValue)
+					_sleepSeconds = value;
+				else
+					throw new Exception("SleepSeconds was specified more than once");
+			}
+		} private static int? _sleepSeconds = null;
 
 		public static string Password
 		{
 			get
 			{
+				if (!string.IsNullOrEmpty(_password))
+					return _password;
 				if (ConfigurationManager.AppSettings.AllKeys.Contains("Password"))
 					return ConfigurationManager.AppSettings["Password"].ToString();
 				return null;
 			}
-		}
+			set
+			{
+				if (string.IsNullOrEmpty(_password))
+					_password = value;
+				else
+					throw new Exception("Password was specified more than once");
+			}
+		} private static string _password = null;
 
 		public static string UserName
 		{
 			get
 			{
+				if (!string.IsNullOrEmpty(_password))
+					return _username;
 				if (ConfigurationManager.AppSettings.AllKeys.Contains("UserName"))
 					return ConfigurationManager.AppSettings["UserName"].ToString();
 				return null;
 			}
-		}
+			set
+			{
+				if (string.IsNullOrEmpty(_username))
+					_username = value;
+				else
+					throw new Exception("UserName was specified more than once");
+			}
+		} private static string _username = null;
+		
 	}
 }
