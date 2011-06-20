@@ -40,7 +40,7 @@ namespace OwnCloudClient
 			return string.Join(string.Empty, password);
 		}
 
-		public static void SampleUseage()
+		public static void PrintSampleUseage()
 		{
 			Console.WriteLine("--noconfirmdownload");
 			Console.WriteLine("--noconfirmupload");
@@ -49,7 +49,7 @@ namespace OwnCloudClient
 			Console.WriteLine("--massdownload");
 			Console.WriteLine("--sleepseconds=10");
 			Console.WriteLine("--watchdir=C:\\temp\\");
-			Console.WriteLine("--baseurl=https://xyz.owncloud.org/user/");
+			Console.WriteLine("--owncloudurl=https://xyz.owncloud.org/user/");
 		}
 
 		public static void PrintCurrentSettings()
@@ -62,7 +62,7 @@ namespace OwnCloudClient
 			NLogger.Current.Debug("massdownload: " + Settings.MassDownload);
 			NLogger.Current.Debug("sleepSeconds: " + Settings.SleepSeconds);
 			NLogger.Current.Debug("watchdir: " + Settings.WatchDir);
-			NLogger.Current.Debug("baseurl: " + Settings.OwnCloudUrl);
+			NLogger.Current.Debug("owncloudurl: " + Settings.OwnCloudUrl);
 		}
 
 		public static bool SetSettings(string[] args)
@@ -80,10 +80,17 @@ namespace OwnCloudClient
 					"massdownload", 
 					"sleepseconds=",
 					"watchdir=",
-					"baseurl="
+					"owncloudurl=",
+					"help"
 				});
 
 				parser.Parse();
+
+				if (parser.IsDefined("help"))
+				{
+					PrintSampleUseage();
+					return false;
+				}
 
 				if (parser.IsDefined("noconfirmdownload"))
 					Settings.NoConfirmDownload = true;
@@ -97,8 +104,8 @@ namespace OwnCloudClient
 					Settings.MassDownload = true;
 				if (parser.IsDefined("watchdir"))
 					Settings.WatchDir = parser.Opts["watchdir"].ToString();
-				if (parser.IsDefined("baseurl"))
-					Settings.OwnCloudUrl = parser.Opts["baseurl"].ToString();
+				if (parser.IsDefined("owncloudurl"))
+					Settings.OwnCloudUrl = parser.Opts["owncloudurl"].ToString();
 				if (parser.IsDefined("sleepseconds"))
 					Settings.SleepSeconds = Convert.ToInt32(parser.Opts["sleepseconds"].ToString());
 			
@@ -107,7 +114,7 @@ namespace OwnCloudClient
 			{
 				NLogger.Current.FatalException("Argument Exception", ex);
 
-				SampleUseage();
+				PrintSampleUseage();
 				success = false;
 			}
 			catch (Exception ex)
