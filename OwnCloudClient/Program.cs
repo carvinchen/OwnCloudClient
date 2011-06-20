@@ -49,7 +49,7 @@ namespace OwnCloudClient
 			Console.WriteLine("--runonce\t\t[flag] Run all checks once and then exit - otherwise sleep for [sleepseconds] and run again");
 			Console.WriteLine("--downloadonly\t\t[flag] Download all changed/new files hosted in OwnCloud and exit");
 			Console.WriteLine("--sleepseconds\t\tNumber of seconds to wait before checking for changes (default = 10)");
-			Console.WriteLine("--watchdir=\t\tThe directory (recursive) to watch for changes (default currentDir\\data\\)");
+			Console.WriteLine("--watchdir\t\tThe directory (recursive) to watch for changes (default currentDir\\data\\)");
 			Console.WriteLine("--owncloudurl\t\tThe URL to your OwnCloud instance");
 		}
 
