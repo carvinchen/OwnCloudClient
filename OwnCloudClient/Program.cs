@@ -143,21 +143,23 @@ namespace OwnCloudClient
 		//files that have a newer version in the cloud -- download them and replace local files
 		static int ProcessOutDatedLocalFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool confirmDownload)
 		{
-			var localQuery = (from l in localFiles
+			var localQuery = from l in localFiles
 							  join r in remoteFiles on l.FileName equals r.FileName
 							  where (r.LastModified - l.LastModified).Seconds >= 2
-							  select r).ToList();
+							  select r;
 
-			if (localQuery.Count > 0)
+			var shouldDownloadLocalQuery = localQuery.Where(f => OwnCloudClient.ShouldDownload(f)).ToList();
+
+			if (shouldDownloadLocalQuery.Count > 0)
 			{
 				Console.WriteLine("Found Downloads:");
 				foreach (var x in localQuery)
 					Console.WriteLine(x.FileName);
 			}
 
-			List<FileInfoX> confirmedToDownload = localQuery;
+			List<FileInfoX> confirmedToDownload = shouldDownloadLocalQuery;
 			if (confirmDownload)
-				confirmedToDownload = FillConfirmationList(localQuery);
+				confirmedToDownload = FillConfirmationList(shouldDownloadLocalQuery);
 
 			foreach (var x in confirmedToDownload)
 				OwnCloudClient.Download(x.CloudNamePlusDate);
@@ -329,26 +331,26 @@ namespace OwnCloudClient
 				Console.WriteLine();
 			}
 
-			Console.WriteLine("Options: ");
-			Console.WriteLine("confirmdownload: " + confirmDownload);
-			Console.WriteLine("confirmupload: " + confirmUpload);
-			Console.WriteLine("confirmdelete: " + confirmDelete);
-			Console.WriteLine("runonce: " + runOnce);
-			Console.WriteLine("massdownload: " + massDownload);
-			Console.WriteLine("sleepSeconds: " + sleepSeconds);
-			Console.WriteLine("watchdir: " + Settings.WatchDir);
-			Console.WriteLine("baseurl: " + Settings.OwnCloudUrl);
+			NLogger.Current.Debug("Options: ");
+			NLogger.Current.Debug("confirmdownload: " + confirmDownload);
+			NLogger.Current.Debug("confirmupload: " + confirmUpload);
+			NLogger.Current.Debug("confirmdelete: " + confirmDelete);
+			NLogger.Current.Debug("runonce: " + runOnce);
+			NLogger.Current.Debug("massdownload: " + massDownload);
+			NLogger.Current.Debug("sleepSeconds: " + sleepSeconds);
+			NLogger.Current.Debug("watchdir: " + Settings.WatchDir);
+			NLogger.Current.Debug("baseurl: " + Settings.OwnCloudUrl);
 
 			if (!OwnCloudClient.Login(userName, password))
 			{
-				Console.WriteLine("Invalid username or password");
+				NLogger.Current.Warn("Invalid username or password");
 				return;
 			}
 
 			if (massDownload)
 			{
 				//OwnCloudClient.DownloadAll("vccdrom~");
-				Console.Write("Warning: This may overwrite files in your local directory: Continue? [y/n]: ");
+				NLogger.Current.Warn("Warning: This may overwrite files in your local directory: Continue? [y/n]: ");
 
 				ConsoleKeyInfo k = Console.ReadKey();
 				Console.WriteLine();

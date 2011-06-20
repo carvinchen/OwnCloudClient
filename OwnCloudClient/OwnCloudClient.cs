@@ -54,16 +54,6 @@ namespace OwnCloudClient
 			sb.AppendLine("login");
 			sb.AppendLine("-----------------------------7db2172440460--");
 
-			//wc.Headers.Add("Accept: text/html, application/xhtml+xml, */*");
-			//wc.Headers.Add(string.Format("Referer: {0}", OWNCLOUD_URL));
-			//wc.Headers.Add("Accept-Language: en-us");
-			//wc.Headers.Add("User-Agent: Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0; WOW64; Trident/5.0)");
-			//wc.Headers.Add("Content-Type: multipart/form-data; boundary=---------------------------7db2172440460");
-			//wc.Headers.Add("Host: sideproj.dot5hosting.com");
-			//wc.Headers.Add("Pragma: no-cache");
-			//wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
-			//string response = wc.UploadString(OWNCLOUD_URL, "POST", sb.ToString());
-
 			WebRequest request = WebRequest.Create(Settings.OwnCloudUrl);
 			((HttpWebRequest)request).AllowAutoRedirect = false;
 
@@ -74,22 +64,30 @@ namespace OwnCloudClient
 			request.ContentType = "multipart/form-data; boundary=---------------------------7db2172440460";
 			request.Headers.Add("Pragma: no-cache");
 			request.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
-			Stream dataStream = request.GetRequestStream();
-			byte[] datums = Encoding.ASCII.GetBytes(sb.ToString());
-			dataStream.Write(datums, 0, datums.Length);
-				
-			HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-			success = (int)response.StatusCode == 302;
 
-			//Stream responseStream = response.GetResponseStream();
-			//StreamReader reader = new StreamReader(responseStream);
-			//string responseFromServer = reader.ReadToEnd();
-			//reader.Close();
-			dataStream.Close();
-			response.Close();
+			using (Stream dataStream = request.GetRequestStream())
+			{
+				byte[] datums = Encoding.ASCII.GetBytes(sb.ToString());
+				dataStream.Write(datums, 0, datums.Length);
 
+				HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+				if ((int)response.StatusCode == 302)
+				{
+					using (Stream responseStream = response.GetResponseStream())
+					{
+						using (StreamReader reader = new StreamReader(responseStream))
+						{
+							string responseFromServer = reader.ReadToEnd();
+							success = responseFromServer == "\n\n12"; //success message
+							reader.Close();
+						}
+						responseStream.Close();
+					}
+					response.Close();
+				}
+				dataStream.Close();
+			}
 			return success;
-			
 		}
 
 		private static string GetPhpId()
@@ -124,13 +122,12 @@ namespace OwnCloudClient
 		{
 			try
 			{
-				//TODO: check last modified date of cloud file compared to local don't download if local is newer
 				using (WebClient wc = new WebClient())
 				{
 					wc.Headers.Add("Pragma: no-cache");
 					wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
 					NLogger.Current.Info(string.Format("Downloading {0}", cloudFileNamePlusDate));
-					Uri uri = new Uri(string.Concat(Settings.OwnCloudUrl, "files/api.php?action=get&dir=&file=", cloudFileNamePlusDate));
+					Uri uri = new Uri(string.Concat(Settings.OwnCloudUrl, "files/api.php?action=get&dir=&file=", cloudFileNamePlusDate)); //cbTODO: urlencode filename?
 					wc.DownloadFile(uri, Settings.WatchDir + cloudFileNamePlusDate);
 				}
 
@@ -192,7 +189,7 @@ namespace OwnCloudClient
 					fileName = fileName.Substring(0, fileName.Length - 4);
 
 					if (!string.IsNullOrEmpty(cloudNamePlusDate))
-						files.Add(new FileInfoX() { CloudName = cloudName, LastModified = modified, CloudNamePlusDate = cloudNamePlusDate, FileName = fileName});
+						files.Add(new FileInfoX() { CloudName = cloudName, LastModified = modified, CloudNamePlusDate = cloudNamePlusDate, FileName = fileName });
 				}
 			}
 
@@ -232,7 +229,7 @@ namespace OwnCloudClient
 
 				//!FileNameProcessing
 				string tmpFileName = localFullPath.Replace(Settings.WatchDir, "").Replace('\\', '~') +
-							".enc" + 
+							".enc" +
 							"." + GetUnixTimeStamp(fi.LastWriteTime);
 
 				System.IO.File.WriteAllBytes(Settings.WatchDir + tmpFileName, encrypted);
@@ -277,17 +274,40 @@ namespace OwnCloudClient
 			return success;
 		}
 
+		public static bool ShouldDownload(FileInfoX f)
+		{
+			string fname = Settings.WatchDir + f.FileName;
+			bool shouldDownload = false;
+
+			if (System.IO.File.Exists(fname))
+			{
+				System.IO.FileInfo info = new FileInfo(fname);
+				shouldDownload = info.LastAccessTime < f.LastModified;
+			}
+			else
+			{
+				shouldDownload = true;
+			}
+			return shouldDownload;
+		}
+
 		public static void DownloadAll()
 		{
-			foreach (var s in GetFileList())
-				Download(s.CloudNamePlusDate);
+			foreach (var f in GetFileList())
+			{
+				if (ShouldDownload(f))
+					OwnCloudClient.Download(f.CloudNamePlusDate);
+			}
 		}
 
 		public static void DownloadAll(string startsWith)
 		{
 			var files = GetFileList();
-			foreach (var s in files.Where(x => x.CloudName.StartsWith(startsWith)))
-				Download(s.CloudNamePlusDate);
+			foreach (var f in files.Where(x => x.CloudName.StartsWith(startsWith)))
+			{
+				if (ShouldDownload(f))
+					Download(f.CloudNamePlusDate);
+			}
 		}
 
 	}
