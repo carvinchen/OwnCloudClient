@@ -27,6 +27,34 @@ namespace OwnCloudClient
 			return new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(Convert.ToDouble(sUnixTime));
 		}
 
+		private static string GetPhpId()
+		{
+			string id = string.Empty;
+			using (WebClient wc = new WebClient())
+			{
+				wc.OpenRead(Settings.OwnCloudUrl);
+
+				foreach (string s in wc.ResponseHeaders.AllKeys)
+				{
+					if (s == "Set-Cookie")
+					{
+						//"PHPSESSID=84652f6a9b66943792131acacdf571a8; path=/; HttpOnly"
+						string input = wc.ResponseHeaders["Set-Cookie"];
+						Match match = Regex.Match(input, @"PHPSESSID\=([^;]+)");
+
+						if (match != null && match.Captures.Count == 1)
+							id = match.Groups[1].Value;
+
+						break;
+					}
+				}
+			}
+			if (string.IsNullOrEmpty(id))
+				throw new Exception("PHPSESSID could not be found");
+
+			return id;
+		}
+
 		public static string GetUnixTimeStamp(DateTime modifiedDate)
 		{
 			TimeSpan ts = (modifiedDate - new DateTime(1970, 1, 1, 0, 0, 0));
@@ -90,34 +118,6 @@ namespace OwnCloudClient
 			return success;
 		}
 
-		private static string GetPhpId()
-		{
-			string id = string.Empty;
-			using (WebClient wc = new WebClient())
-			{
-				wc.OpenRead(Settings.OwnCloudUrl);
-
-				foreach (string s in wc.ResponseHeaders.AllKeys)
-				{
-					if (s == "Set-Cookie")
-					{
-						//"PHPSESSID=84652f6a9b66943792131acacdf571a8; path=/; HttpOnly"
-						string input = wc.ResponseHeaders["Set-Cookie"];
-						Match match = Regex.Match(input, @"PHPSESSID\=([^;]+)");
-
-						if (match != null && match.Captures.Count == 1)
-							id = match.Groups[1].Value;
-
-						break;
-					}
-				}
-			}
-			if (string.IsNullOrEmpty(id))
-				throw new Exception("PHPSESSID could not be found");
-
-			return id;
-		}
-
 		public static void Download(string cloudFileNamePlusDate)
 		{
 			try
@@ -158,7 +158,7 @@ namespace OwnCloudClient
 			}
 		}
 
-		public static List<FileInfoX> GetFileList()
+		public static List<FileInfoX> GetRemoteFileList()
 		{
 			List<FileInfoX> files = new List<FileInfoX>();
 			string json = string.Empty;
@@ -196,9 +196,33 @@ namespace OwnCloudClient
 			return files;
 		}
 
+		public static List<FileInfoX> GetLocalFileList()
+		{
+			List<FileInfoX> files = new List<FileInfoX>();
+			foreach (var item in System.IO.Directory.EnumerateFileSystemEntries(Settings.WatchDir, "*", System.IO.SearchOption.AllDirectories))
+			{
+				System.IO.FileInfo info = new System.IO.FileInfo(item);
+				if (!info.Exists)
+					continue;
+				else if (System.Text.RegularExpressions.Regex.IsMatch(item, @"\.enc\.\d{12}$"))
+					continue;
+
+				FileInfoX x = new FileInfoX();
+				DateTime lastWrite = new DateTime(info.LastWriteTime.Year, info.LastWriteTime.Month, info.LastWriteTime.Day, info.LastWriteTime.Hour, info.LastWriteTime.Minute, info.LastWriteTime.Second); //do it this way to avoid milisecond comparison problemsinfo.LastWriteTime;
+
+				//!FileNameProcessing
+				x.CloudName = item.Replace(Settings.WatchDir, "").Replace('\\', '~') + ".enc";
+				x.LastModified = lastWrite;
+				x.FileName = item.Replace(Settings.WatchDir, "");
+				x.CloudNamePlusDate = x.CloudName + "." + OwnCloudClient.GetUnixTimeStamp(lastWrite);
+				files.Add(x);
+			}
+			return files;
+		}
+
 		public static void PrintFileList()
 		{
-			foreach (var s in GetFileList())
+			foreach (var s in GetRemoteFileList())
 				NLogger.Current.Info(s.CloudName);
 		}
 
@@ -293,7 +317,7 @@ namespace OwnCloudClient
 
 		public static void DownloadAll()
 		{
-			foreach (var f in GetFileList())
+			foreach (var f in GetRemoteFileList())
 			{
 				if (ShouldDownload(f))
 					OwnCloudClient.Download(f.CloudNamePlusDate);
@@ -302,7 +326,7 @@ namespace OwnCloudClient
 
 		public static void DownloadAll(string startsWith)
 		{
-			var files = GetFileList();
+			var files = GetRemoteFileList();
 			foreach (var f in files.Where(x => x.CloudName.StartsWith(startsWith)))
 			{
 				if (ShouldDownload(f))
