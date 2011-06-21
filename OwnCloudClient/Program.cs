@@ -40,9 +40,10 @@ namespace OwnCloudClient
 			return string.Join(string.Empty, password);
 		}
 
-		public static void PrintSampleUseage()
+		public static void DisplaySampleUseage()
 		{
-			Console.WriteLine("Unless downloadonly or runonce flags are set, program will continue to monitor changes");
+			Console.WriteLine("Note: Unless downloadonly or runonce flags are set, program will continue to monitor changes");
+			Console.WriteLine();
 			Console.WriteLine("--noconfirmdownload\t[flag] Don't ask about downloading files to local disk");
 			Console.WriteLine("--noconfirmupload\t[flag] Don't ask about uploading files to OwnCloud");
 			Console.WriteLine("--noconfirmdelete\t[flag] Don't ask about deleting remote files");
@@ -51,9 +52,11 @@ namespace OwnCloudClient
 			Console.WriteLine("--sleepseconds\t\tNumber of seconds to wait before checking for changes (default = 10)");
 			Console.WriteLine("--watchdir\t\tThe directory (recursive) to watch for changes (default currentDir\\data\\)");
 			Console.WriteLine("--owncloudurl\t\tThe URL to your OwnCloud instance");
+			Console.WriteLine("--version\t\tDisplay version informatoon");
+			Console.WriteLine("--help\t\t\tDisplay this screen");
 		}
 
-		public static void PrintCurrentSettings()
+		public static void DisplayCurrentSettings()
 		{
 			NLogger.Current.Debug("Options: ");
 			NLogger.Current.Debug("confirmdownload: " + !Settings.NoConfirmDownload);
@@ -64,6 +67,42 @@ namespace OwnCloudClient
 			NLogger.Current.Debug("sleepSeconds: " + Settings.SleepSeconds);
 			NLogger.Current.Debug("watchdir: " + Settings.WatchDir);
 			NLogger.Current.Debug("owncloudurl: " + Settings.OwnCloudUrl);
+		}
+
+		//http://stackoverflow.com/questions/1600962/c-displaying-the-build-date
+		private static DateTime RetrieveLinkerTimestamp()
+		{
+			string filePath = System.Reflection.Assembly.GetCallingAssembly().Location;
+			const int c_PeHeaderOffset = 60;
+			const int c_LinkerTimestampOffset = 8;
+			byte[] b = new byte[2048];
+			System.IO.Stream s = null;
+
+			try
+			{
+				s = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+				s.Read(b, 0, 2048);
+			}
+			finally
+			{
+				if (s != null)
+					s.Close();
+			}
+
+			int i = System.BitConverter.ToInt32(b, c_PeHeaderOffset);
+			int secondsSince1970 = System.BitConverter.ToInt32(b, i + c_LinkerTimestampOffset);
+			DateTime dt = new DateTime(1970, 1, 1, 0, 0, 0);
+			dt = dt.AddSeconds(secondsSince1970);
+			dt = dt.AddHours(TimeZone.CurrentTimeZone.GetUtcOffset(dt).Hours);
+			return dt;
+		}
+
+		private static void DisplayVersionInfo()
+		{
+			Console.WriteLine("OwnCloudClient");
+			Console.WriteLine("Build Date: " + RetrieveLinkerTimestamp().ToString());
+			var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+			Console.WriteLine(string.Format("Version: {0}.{1}.{2}.{3}", v.Major, v.Minor, v.Revision, v.Build));
 		}
 
 		public static bool SetSettings(string[] args)
@@ -82,16 +121,24 @@ namespace OwnCloudClient
 					"sleepseconds=",
 					"watchdir=",
 					"owncloudurl=",
-					"help"
+					"help",
+					"version"
 				});
 
 				parser.Parse();
 
 				if (parser.IsDefined("help"))
 				{
-					PrintSampleUseage();
+					DisplaySampleUseage();
 					return false;
 				}
+
+				if (parser.IsDefined("version"))
+				{
+					DisplayVersionInfo();
+					return false;
+				}
+
 
 				if (parser.IsDefined("noconfirmdownload"))
 					Settings.NoConfirmDownload = true;
@@ -115,7 +162,7 @@ namespace OwnCloudClient
 			{
 				NLogger.Current.FatalException("Argument Exception", ex);
 
-				PrintSampleUseage();
+				DisplaySampleUseage();
 				success = false;
 			}
 			catch (Exception ex)
@@ -144,7 +191,7 @@ namespace OwnCloudClient
 			if (!SetSettings(args))
 				return;
 
-			PrintCurrentSettings();
+			DisplayCurrentSettings();
 
 			if (!OwnCloudClient.Login(Settings.UserName, Settings.Password))
 			{
