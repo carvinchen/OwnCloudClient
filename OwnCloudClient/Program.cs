@@ -139,7 +139,6 @@ namespace OwnCloudClient
 					return false;
 				}
 
-
 				if (parser.IsDefined("noconfirmdownload"))
 					Settings.NoConfirmDownload = true;
 				if (parser.IsDefined("noconfirmupload"))
@@ -156,7 +155,18 @@ namespace OwnCloudClient
 					Settings.OwnCloudUrl = parser.Opts["owncloudurl"].ToString();
 				if (parser.IsDefined("sleepseconds"))
 					Settings.SleepSeconds = Convert.ToInt32(parser.Opts["sleepseconds"].ToString());
-			
+
+				if (string.IsNullOrEmpty(Settings.UserName))
+				{
+					Console.Write("Enter UserName: ");
+					Settings.UserName = Console.ReadLine();
+				}
+				if (string.IsNullOrEmpty(Settings.Password))
+				{
+					Console.Write("Enter Password: ");
+					Settings.Password = ReadPassword();
+					Console.WriteLine();
+				}
 			}
 			catch (ArgumentException ex)
 			{
@@ -167,20 +177,8 @@ namespace OwnCloudClient
 			}
 			catch (Exception ex)
 			{
-				NLogger.Current.FatalException("GetOpt Exception", ex);
+				NLogger.Current.FatalException("SetSettings Exception", ex);
 				success = false;
-			}
-
-			if (string.IsNullOrEmpty(Settings.UserName))
-			{
-				Console.Write("Enter UserName: ");
-				Settings.UserName = Console.ReadLine();
-			}
-			if (string.IsNullOrEmpty(Settings.Password))
-			{
-				Console.Write("Enter Password: ");
-				Settings.Password = ReadPassword();
-				Console.WriteLine();
 			}
 
 			return success;
@@ -188,67 +186,77 @@ namespace OwnCloudClient
 
 		static void Main(string[] args)
 		{
-			if (!SetSettings(args))
-				return;
-
-			DisplayCurrentSettings();
-
-			if (!OwnCloudClient.Login(Settings.UserName, Settings.Password))
+			try
 			{
-				NLogger.Current.Warn("Invalid username or password");
-				return;
-			}
+				if (!SetSettings(args))
+					return;
 
-			if (Settings.DownloadOnly)
-			{
-				//OwnCloudClient.DownloadAll("vccdrom~");
-				NLogger.Current.Warn("Warning: This may overwrite files in your local directory: Continue? [y/n]: ");
+				DisplayCurrentSettings();
 
-				ConsoleKeyInfo k = Console.ReadKey();
-				Console.WriteLine();
-
-				if (k.KeyChar == 'y' || k.KeyChar == 'Y')
-					OwnCloudClient.DownloadAll();
-
-				return; //bail out of program
-			}
-
-			NLogger.Current.Trace("Loading locals");
-			List<FileInfoX> localFiles = OwnCloudClient.GetLocalFileList();
-
-			NLogger.Current.Trace("Loading Remotes");
-			List<FileInfoX> remoteFiles = OwnCloudClient.GetRemoteFileList();
-
-			//outdated checks only need to run at the beginning since we are checking with lastSweep
-			//NOTE: if used with multiple users on the same cloud account this becomes problematic
-			int updatedRemoteFiles = FileProcessingHelpers.ProcessOutDatedRemoteFiles(localFiles, remoteFiles, !Settings.NoConfirmUpload);
-			if (updatedRemoteFiles > 0)
-			{
-				NLogger.Current.Trace("Refreshing remotes");
-				remoteFiles = OwnCloudClient.GetRemoteFileList(); //refresh
-			}
-			int updatedLocalFiles = FileProcessingHelpers.ProcessOutDatedLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmDownload);
-
-			DateTime lastSweep = DateTime.Now;
-			while (true)
-			{
-				NLogger.Current.Trace("Refreshing locals");
-				localFiles = OwnCloudClient.GetLocalFileList();
-
-				int uploadCount = FileProcessingHelpers.ProcessNewLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmUpload, lastSweep);
-				int deleteCount = FileProcessingHelpers.ProcessDeleteRemoteFiles(localFiles, remoteFiles, !Settings.NoConfirmDelete);
-
-				if (Settings.RunOnce)
-					return; //bail out of program
-
-				if (uploadCount > 0 || deleteCount > 0)
+				if (!OwnCloudClient.Login(Settings.UserName, Settings.Password))
 				{
-					NLogger.Current.Trace("Refreshing remotes");
-					remoteFiles = OwnCloudClient.GetRemoteFileList();
+					NLogger.Current.Warn("Invalid username or password");
+					return;
 				}
 
-				lastSweep = DateTime.Now;
-				System.Threading.Thread.Sleep(1000 * Settings.SleepSeconds);
+				if (Settings.DownloadOnly)
+				{
+					//OwnCloudClient.DownloadAll("vccdrom~");
+					ConsoleColor currentColor = Console.ForegroundColor;
+					Console.ForegroundColor = ConsoleColor.Yellow;
+					Console.Write("Warning: This may overwrite files in your local directory: Continue? [y/n]: ");
+					Console.ForegroundColor = currentColor;
+					
+					ConsoleKeyInfo k = Console.ReadKey();
+					Console.WriteLine();
+
+					if (k.KeyChar == 'y' || k.KeyChar == 'Y')
+						OwnCloudClient.DownloadAll();
+
+					return; //bail out of program
+				}
+
+				NLogger.Current.Trace("Loading locals");
+				List<FileInfoX> localFiles = OwnCloudClient.GetLocalFileList();
+
+				NLogger.Current.Trace("Loading Remotes");
+				List<FileInfoX> remoteFiles = OwnCloudClient.GetRemoteFileList();
+
+				//outdated checks only need to run at the beginning since we are checking with lastSweep
+				//NOTE: if used with multiple users on the same cloud account this becomes problematic
+				int updatedRemoteFiles = FileProcessingHelpers.ProcessOutDatedRemoteFiles(localFiles, remoteFiles, !Settings.NoConfirmUpload);
+				if (updatedRemoteFiles > 0)
+				{
+					NLogger.Current.Trace("Refreshing remotes");
+					remoteFiles = OwnCloudClient.GetRemoteFileList(); //refresh
+				}
+				int updatedLocalFiles = FileProcessingHelpers.ProcessOutDatedLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmDownload);
+
+				DateTime lastSweep = DateTime.Now;
+				while (true)
+				{
+					NLogger.Current.Trace("Refreshing locals");
+					localFiles = OwnCloudClient.GetLocalFileList();
+
+					int uploadCount = FileProcessingHelpers.ProcessNewLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmUpload, lastSweep);
+					int deleteCount = FileProcessingHelpers.ProcessDeleteRemoteFiles(localFiles, remoteFiles, !Settings.NoConfirmDelete);
+
+					if (Settings.RunOnce)
+						return; //bail out of program
+
+					if (uploadCount > 0 || deleteCount > 0)
+					{
+						NLogger.Current.Trace("Refreshing remotes");
+						remoteFiles = OwnCloudClient.GetRemoteFileList();
+					}
+
+					lastSweep = DateTime.Now;
+					System.Threading.Thread.Sleep(1000 * Settings.SleepSeconds);
+				}
+			}
+			catch (Exception ex)
+			{
+				NLogger.Current.FatalException("Main() Exception", ex);
 			}
 		}
 	}

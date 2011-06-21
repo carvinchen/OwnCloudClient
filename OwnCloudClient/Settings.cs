@@ -45,7 +45,7 @@ namespace OwnCloudClient
 				else if (ConfigurationManager.AppSettings.AllKeys.Contains("OwnCloudUrl"))
 					retVal = ConfigurationManager.AppSettings["OwnCloudUrl"].ToString();
 				else
-					throw new Exception("Cannot find url in config file");
+					throw new Exception("Cannot find OwnCloud Url");
 
 				if (!retVal.EndsWith("/"))
 					retVal = retVal + "/";
