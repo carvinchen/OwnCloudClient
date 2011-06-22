@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Timers;
-using Heyes;
 
 namespace OwnCloudClient
 {
@@ -53,7 +52,7 @@ namespace OwnCloudClient
 			Console.WriteLine("--watchdir\t\tThe directory (recursive) to watch for changes (default currentDir\\data\\)");
 			Console.WriteLine("--owncloudurl\t\tThe URL to your OwnCloud instance");
 			Console.WriteLine("--version\t\tDisplay version informatoon");
-			Console.WriteLine("--help\t\t\tDisplay this screen");
+			Console.WriteLine("--help\t\t\tDisplay this screen");    
 		}
 
 		public static void DisplayCurrentSettings()
@@ -109,52 +108,50 @@ namespace OwnCloudClient
 		{
 			bool success = true;
 
-			GetOpt parser = new GetOpt(args);
+			cb.Options.Parser p = new cb.Options.Parser();
 			try
 			{
-				parser.SetOpts(new string[] {	
-					"noconfirmdownload", 
-					"noconfirmupload", 
-					"noconfirmdelete", 
-					"runonce", 
-					"downloadonly", 
-					"sleepseconds=",
-					"watchdir=",
-					"owncloudurl=",
-					"help",
-					"version"
-				});
+				p.AddDefinition(new cb.Options.OptionDefinition() { IsFlag = true, LongName = "noconfirmdownload" });
+				p.AddDefinition(new cb.Options.OptionDefinition() { IsFlag = true, LongName = "noconfirmupload" });
+				p.AddDefinition(new cb.Options.OptionDefinition() { IsFlag = true, LongName = "noconfirmdelete" });
+				p.AddDefinition(new cb.Options.OptionDefinition() { IsFlag = true, LongName = "runonce" });
+				p.AddDefinition(new cb.Options.OptionDefinition() { IsFlag = true, LongName = "downloadonly" });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "sleepseconds" });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "watchdir" });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "owncloudurl" });
+				p.AddDefinition(new cb.Options.OptionDefinition() { IsFlag = true, LongName = "help" });
+				p.AddDefinition(new cb.Options.OptionDefinition() { IsFlag = true, LongName = "version" });
 
-				parser.Parse();
+				p.Parse(args);
 
-				if (parser.IsDefined("help"))
+				if (p.IsOptionDefined("help"))
 				{
 					DisplaySampleUseage();
 					return false;
 				}
 
-				if (parser.IsDefined("version"))
+				if (p.IsOptionDefined("version"))
 				{
 					DisplayVersionInfo();
 					return false;
 				}
 
-				if (parser.IsDefined("noconfirmdownload"))
+				if (p.IsOptionDefined("noconfirmdownload"))
 					Settings.NoConfirmDownload = true;
-				if (parser.IsDefined("noconfirmupload"))
+				if (p.IsOptionDefined("noconfirmupload"))
 					Settings.NoConfirmUpload = true;
-				if (parser.IsDefined("noconfirmdelete"))
+				if (p.IsOptionDefined("noconfirmdelete"))
 					Settings.NoConfirmDelete = true;
-				if (parser.IsDefined("runonce"))
+				if (p.IsOptionDefined("runonce"))
 					Settings.RunOnce = true;
-				if (parser.IsDefined("downloadonly"))
+				if (p.IsOptionDefined("downloadonly"))
 					Settings.DownloadOnly = true;
-				if (parser.IsDefined("watchdir"))
-					Settings.WatchDir = parser.Opts["watchdir"].ToString();
-				if (parser.IsDefined("owncloudurl"))
-					Settings.OwnCloudUrl = parser.Opts["owncloudurl"].ToString();
-				if (parser.IsDefined("sleepseconds"))
-					Settings.SleepSeconds = Convert.ToInt32(parser.Opts["sleepseconds"].ToString());
+				if (p.IsOptionDefined("watchdir"))
+					Settings.WatchDir = p.GetOptionStringValue("watchdir");
+				if (p.IsOptionDefined("owncloudurl"))
+					Settings.OwnCloudUrl = p.GetOptionStringValue("owncloudurl");
+				if (p.IsOptionDefined("sleepseconds"))
+					Settings.SleepSeconds = Convert.ToInt32(p.GetOptionStringValue("sleepseconds"));
 
 				if (string.IsNullOrEmpty(Settings.UserName))
 				{
@@ -180,7 +177,6 @@ namespace OwnCloudClient
 				NLogger.Current.FatalException("SetSettings Exception", ex);
 				success = false;
 			}
-
 			return success;
 		}
 
@@ -206,7 +202,7 @@ namespace OwnCloudClient
 					Console.ForegroundColor = ConsoleColor.Yellow;
 					Console.Write("Warning: This may overwrite files in your local directory: Continue? [y/n]: ");
 					Console.ForegroundColor = currentColor;
-					
+
 					ConsoleKeyInfo k = Console.ReadKey();
 					Console.WriteLine();
 
