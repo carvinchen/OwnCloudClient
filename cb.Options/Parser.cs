@@ -7,7 +7,7 @@ namespace cb.Options
 {
 	public class Parser
 	{
-		private Dictionary<string, OptionDefinition> OptionDefinitions = new Dictionary<string, OptionDefinition>();
+		private Dictionary<string, OptionDefinition> _optionDefinitions = new Dictionary<string, OptionDefinition>();
 		public Dictionary<string, Option> _options = new Dictionary<string, Option>();
 
 		public bool IsOptionDefined(string name)
@@ -28,8 +28,8 @@ namespace cb.Options
 		
 		public void AddDefinition(OptionDefinition od)
 		{
-			if (!OptionDefinitions.ContainsKey(od.LongName))
-				OptionDefinitions.Add(od.LongName, od);
+			if (!_optionDefinitions.ContainsKey(od.LongName))
+				_optionDefinitions.Add(od.LongName, od);
 		}
 
 		public void Parse(string[] args)
@@ -52,21 +52,23 @@ namespace cb.Options
 				if (s.Contains('='))
 					name = name.Substring(0, name.LastIndexOf('='));
 
-				if (string.IsNullOrEmpty(name) || !OptionDefinitions.ContainsKey(name))
+				if (string.IsNullOrEmpty(name) || !_optionDefinitions.ContainsKey(name))
 					throw new Exception("Unknown option " + name);
 
-				Option o = new Option();
-				o.LongName = name;
-				o.IsDefined = true;
+				Option o = new Option() { LongName = name, IsDefined = true };
 
-				if (!OptionDefinitions[name].IsFlag && s.Contains('='))
+				if (!_optionDefinitions[name].IsFlag && s.Contains('='))
 					o.StringValue = s.Substring(s.LastIndexOf('=') + 1);
 
 				if (!_options.ContainsKey(o.LongName))
 					_options.Add(o.LongName, o);
+				else
+					_options[name] = o;
 			}
 
-			var undefined = _options.Where(x => x.Value.IsRequired && !x.Value.IsDefined).ToList();
+			var required = _optionDefinitions.Where( x => x.Value.IsRequired == true);
+			var undefined = required.Where(y => !_options.ContainsKey(y.Key)).ToList();
+
 			if (undefined.Count > 0)
 				throw new Exception(string.Format("{0} is a required option", undefined[0].Value.LongName));
 		}
