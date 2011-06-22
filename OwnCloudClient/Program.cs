@@ -118,7 +118,7 @@ namespace OwnCloudClient
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "downloadonly", IsFlag = true });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "sleepseconds" });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "watchdir" });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "owncloudurl", IsRequired = true });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "owncloudurl" });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "help", IsFlag = true });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "version", IsFlag = true });
 
