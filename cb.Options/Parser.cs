@@ -45,8 +45,10 @@ namespace cb.Options
 				{
 					if (s.Length > 2 && s[1] == '-')
 						name = s.Substring(2, s.Length - 2);
-					else
-						name = s.Substring(1, s.Length - 1);
+					
+					//ignore one hyphen auguments for now.
+					//if needed, they can be chained together ls -lw
+					//should they be able to set?  ls -p=5
 				}
 				
 				if (s.Contains('='))
