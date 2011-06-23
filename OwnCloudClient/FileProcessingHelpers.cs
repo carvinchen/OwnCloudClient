@@ -188,7 +188,7 @@ namespace OwnCloudClient
 
 			foreach (var x in confirmedToDelete)
 			{
-				if (string.IsNullOrWhiteSpace(x.CloudName))
+				if (string.IsNullOrEmpty(x.CloudName))
 					continue;
 				OwnCloudClient.DeleteFile(x.CloudNamePlusDate);
 			}

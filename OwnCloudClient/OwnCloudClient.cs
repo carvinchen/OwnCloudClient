@@ -68,19 +68,19 @@ namespace OwnCloudClient
 
 			StringBuilder sb = new StringBuilder();
 
-			sb.AppendLine("-----------------------------7db2172440460");
-			sb.AppendLine("Content-Disposition: form-data; name=\"login\"");
-			sb.AppendLine("");
-			sb.AppendFormat("{0}\r\n", userName);
-			sb.AppendLine("-----------------------------7db2172440460");
-			sb.AppendLine("Content-Disposition: form-data; name=\"password\"");
-			sb.AppendLine("");
-			sb.AppendFormat("{0}\r\n", password);
-			sb.AppendLine("-----------------------------7db2172440460");
-			sb.AppendLine("Content-Disposition: form-data; name=\"loginbutton\"");
-			sb.AppendLine("");
-			sb.AppendLine("login");
-			sb.AppendLine("-----------------------------7db2172440460--");
+			sb.Append("-----------------------------7db2172440460\r\n");
+			sb.Append("Content-Disposition: form-data; name=\"login\"\r\n");
+			sb.Append("\r\n");
+			sb.Append(userName + "\r\n");
+			sb.Append("-----------------------------7db2172440460\r\n");
+			sb.Append("Content-Disposition: form-data; name=\"password\"\r\n");
+			sb.Append("\r\n");
+			sb.Append(password + "\r\n");
+			sb.Append("-----------------------------7db2172440460\r\n");
+			sb.Append("Content-Disposition: form-data; name=\"loginbutton\"\r\n");
+			sb.Append("\r\n");
+			sb.Append("login\r\n");
+			sb.Append("-----------------------------7db2172440460--\r\n");
 
 			WebRequest request = WebRequest.Create(Settings.OwnCloudUrl);
 			((HttpWebRequest)request).AllowAutoRedirect = false;
@@ -89,7 +89,7 @@ namespace OwnCloudClient
 			((HttpWebRequest)request).KeepAlive = false;
 
 			request.Method = "POST";
-			request.ContentType = "multipart/form-data; boundary=---------------------------7db2172440460";
+			request.ContentType = "multipart/form-data; boundary=---------------------------7db2172440460\r\n";
 			request.Headers.Add("Pragma: no-cache");
 			request.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
 
@@ -97,23 +97,23 @@ namespace OwnCloudClient
 			{
 				byte[] datums = Encoding.ASCII.GetBytes(sb.ToString());
 				dataStream.Write(datums, 0, datums.Length);
-
-				HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-				if ((int)response.StatusCode == 302)
-				{
-					using (Stream responseStream = response.GetResponseStream())
-					{
-						using (StreamReader reader = new StreamReader(responseStream))
-						{
-							string responseFromServer = reader.ReadToEnd();
-							success = responseFromServer == "\n\n12"; //success message
-							reader.Close();
-						}
-						responseStream.Close();
-					}
-					response.Close();
-				}
 				dataStream.Close();
+			}
+
+			HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+			if ((int)response.StatusCode == 302)
+			{
+				using (Stream responseStream = response.GetResponseStream())
+				{
+					using (StreamReader reader = new StreamReader(responseStream))
+					{
+						string responseFromServer = reader.ReadToEnd();
+						success = responseFromServer == "\n\n12"; //success message
+						reader.Close();
+					}
+					responseStream.Close();
+				}
+				response.Close();
 			}
 			return success;
 		}
@@ -199,7 +199,7 @@ namespace OwnCloudClient
 		public static List<FileInfoX> GetLocalFileList()
 		{
 			List<FileInfoX> files = new List<FileInfoX>();
-			foreach (var item in System.IO.Directory.EnumerateFileSystemEntries(Settings.WatchDir, "*", System.IO.SearchOption.AllDirectories))
+			foreach (var item in System.IO.Directory.GetFileSystemEntries(Settings.WatchDir, "*"))
 			{
 				System.IO.FileInfo info = new System.IO.FileInfo(item);
 				if (!info.Exists)

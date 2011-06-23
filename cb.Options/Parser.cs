@@ -38,7 +38,7 @@ namespace cb.Options
 			{
 				string name = null;
 
-				if (string.IsNullOrWhiteSpace(s))
+				if (string.IsNullOrEmpty(s))
 					continue;
 
 				if (s.StartsWith("-") || s.StartsWith("/"))
