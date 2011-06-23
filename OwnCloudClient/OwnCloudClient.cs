@@ -199,21 +199,23 @@ namespace OwnCloudClient
 		public static List<FileInfoX> GetLocalFileList()
 		{
 			List<FileInfoX> files = new List<FileInfoX>();
-			foreach (var item in System.IO.Directory.GetFileSystemEntries(Settings.WatchDir, "*"))
+			System.IO.DirectoryInfo info = new DirectoryInfo(Settings.WatchDir);
+			
+			//foreach (var item in System.IO.Directory.GetFileSystemEntries(Settings.WatchDir, "*"))
+			foreach (var item in info.GetFileSystemInfos())
 			{
-				System.IO.FileInfo info = new System.IO.FileInfo(item);
 				if (!info.Exists)
 					continue;
-				else if (System.Text.RegularExpressions.Regex.IsMatch(item, @"\.enc\.\d{12}$"))
+				else if (System.Text.RegularExpressions.Regex.IsMatch(item.FullName, @"\.enc\.\d{12}$"))
 					continue;
 
 				FileInfoX x = new FileInfoX();
 				DateTime lastWrite = new DateTime(info.LastWriteTime.Year, info.LastWriteTime.Month, info.LastWriteTime.Day, info.LastWriteTime.Hour, info.LastWriteTime.Minute, info.LastWriteTime.Second); //do it this way to avoid milisecond comparison problemsinfo.LastWriteTime;
 
 				//!FileNameProcessing
-				x.CloudName = item.Replace(Settings.WatchDir, "").Replace(System.IO.Path.DirectorySeparatorChar, '~') + ".enc";
+				x.CloudName = item.FullName.Replace(Settings.WatchDir, "").Replace(System.IO.Path.DirectorySeparatorChar, '~') + ".enc";
 				x.LastModified = lastWrite;
-				x.FileName = item.Replace(Settings.WatchDir, "");
+				x.FileName = item.FullName.Replace(Settings.WatchDir, "");
 				x.CloudNamePlusDate = x.CloudName + "." + OwnCloudClient.GetUnixTimeStamp(lastWrite);
 				files.Add(x);
 			}
