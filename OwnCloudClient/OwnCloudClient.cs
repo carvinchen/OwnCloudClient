@@ -196,26 +196,64 @@ namespace OwnCloudClient
 			return files;
 		}
 
+		//http://stackoverflow.com/questions/929276/how-to-recursively-list-all-the-files-in-a-directory-in-c
+		private static IEnumerable<string> GetFiles(string path)
+		{
+			Queue<string> queue = new Queue<string>();
+			queue.Enqueue(path);
+			while (queue.Count > 0)
+			{
+				path = queue.Dequeue();
+				try
+				{
+					foreach (string subDir in Directory.GetDirectories(path))
+					{
+						queue.Enqueue(subDir);
+					}
+				}
+				catch (Exception ex)
+				{
+					Console.Error.WriteLine(ex);
+				}
+
+				string[] files = null;
+				try
+				{
+					files = Directory.GetFiles(path);
+				}
+				catch (Exception ex)
+				{
+					Console.Error.WriteLine(ex);
+				}
+
+				if (files != null)
+				{
+					for (int i = 0; i < files.Length; i++)
+						yield return files[i];
+				}
+			}
+		}
+
 		public static List<FileInfoX> GetLocalFileList()
 		{
 			List<FileInfoX> files = new List<FileInfoX>();
-			System.IO.DirectoryInfo info = new DirectoryInfo(Settings.WatchDir);
 			
-			//foreach (var item in System.IO.Directory.GetFileSystemEntries(Settings.WatchDir, "*"))
-			foreach (var item in info.GetFileSystemInfos())
+			foreach (var item in GetFiles(Settings.WatchDir))
 			{
-				if (!info.Exists)
+				if (!System.IO.File.Exists(item))
 					continue;
-				else if (System.Text.RegularExpressions.Regex.IsMatch(item.FullName, @"\.enc\.\d{12}$"))
+				else if (System.Text.RegularExpressions.Regex.IsMatch(item, @"\.enc\.\d{12}$"))
 					continue;
+
+				var info = new System.IO.FileInfo(item);
 
 				FileInfoX x = new FileInfoX();
 				DateTime lastWrite = new DateTime(info.LastWriteTime.Year, info.LastWriteTime.Month, info.LastWriteTime.Day, info.LastWriteTime.Hour, info.LastWriteTime.Minute, info.LastWriteTime.Second); //do it this way to avoid milisecond comparison problemsinfo.LastWriteTime;
 
 				//!FileNameProcessing
-				x.CloudName = item.FullName.Replace(Settings.WatchDir, "").Replace(System.IO.Path.DirectorySeparatorChar, '~') + ".enc";
+				x.CloudName = item.Replace(Settings.WatchDir, "").Replace(System.IO.Path.DirectorySeparatorChar, '~') + ".enc";
 				x.LastModified = lastWrite;
-				x.FileName = item.FullName.Replace(Settings.WatchDir, "");
+				x.FileName = item.Replace(Settings.WatchDir, "");
 				x.CloudNamePlusDate = x.CloudName + "." + OwnCloudClient.GetUnixTimeStamp(lastWrite);
 				files.Add(x);
 			}
