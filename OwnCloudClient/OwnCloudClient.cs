@@ -136,8 +136,8 @@ namespace OwnCloudClient
 
 				if (cloudFileNamePlusDate.Contains('~'))
 				{
-					cloudFileNamePlusDate = cloudFileNamePlusDate.Replace('~', '\\');
-					string fileDirectory = cloudFileNamePlusDate.Substring(0, cloudFileNamePlusDate.LastIndexOf('\\'));
+					cloudFileNamePlusDate = cloudFileNamePlusDate.Replace('~', System.IO.Path.DirectorySeparatorChar);
+					string fileDirectory = cloudFileNamePlusDate.Substring(0, cloudFileNamePlusDate.LastIndexOf(System.IO.Path.DirectorySeparatorChar.ToString()));
 
 					string currentPath = Settings.WatchDir + fileDirectory; ;
 					if (!System.IO.Directory.Exists(currentPath))
@@ -185,7 +185,7 @@ namespace OwnCloudClient
 					DateTime modified = new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(Convert.ToDouble(sUnixTime));
 
 					//!FileNameProcessing
-					string fileName = cloudName.Replace('~', '\\');
+					string fileName = cloudName.Replace('~', System.IO.Path.DirectorySeparatorChar);
 					fileName = fileName.Substring(0, fileName.Length - 4);
 
 					if (!string.IsNullOrEmpty(cloudNamePlusDate))
@@ -211,7 +211,7 @@ namespace OwnCloudClient
 				DateTime lastWrite = new DateTime(info.LastWriteTime.Year, info.LastWriteTime.Month, info.LastWriteTime.Day, info.LastWriteTime.Hour, info.LastWriteTime.Minute, info.LastWriteTime.Second); //do it this way to avoid milisecond comparison problemsinfo.LastWriteTime;
 
 				//!FileNameProcessing
-				x.CloudName = item.Replace(Settings.WatchDir, "").Replace('\\', '~') + ".enc";
+				x.CloudName = item.Replace(Settings.WatchDir, "").Replace(System.IO.Path.DirectorySeparatorChar, '~') + ".enc";
 				x.LastModified = lastWrite;
 				x.FileName = item.Replace(Settings.WatchDir, "");
 				x.CloudNamePlusDate = x.CloudName + "." + OwnCloudClient.GetUnixTimeStamp(lastWrite);
@@ -252,7 +252,7 @@ namespace OwnCloudClient
 				byte[] encrypted = Encryption.EncryptFile(localFullPath);
 
 				//!FileNameProcessing
-				string tmpFileName = localFullPath.Replace(Settings.WatchDir, "").Replace('\\', '~') +
+				string tmpFileName = localFullPath.Replace(Settings.WatchDir, "").Replace(System.IO.Path.DirectorySeparatorChar, '~') +
 							".enc" +
 							"." + GetUnixTimeStamp(fi.LastWriteTime);
 

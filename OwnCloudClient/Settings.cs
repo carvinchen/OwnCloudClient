@@ -19,10 +19,10 @@ namespace OwnCloudClient
 				else if (ConfigurationManager.AppSettings.AllKeys.Contains("WatchDir"))
 					retVal = ConfigurationManager.AppSettings["WatchDir"].ToString();
 				else
-					retVal = Environment.CurrentDirectory + "/data/";
+					retVal = Environment.CurrentDirectory + System.IO.Path.DirectorySeparatorChar.ToString() + "data" + System.IO.Path.DirectorySeparatorChar.ToString();
 
-				if (!retVal.EndsWith("/"))
-					retVal = retVal + "/";
+				if (!retVal.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+					retVal = retVal + System.IO.Path.DirectorySeparatorChar.ToString();
 
 				return retVal;
 			}
