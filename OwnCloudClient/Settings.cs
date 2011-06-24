@@ -211,6 +211,45 @@ namespace OwnCloudClient
 					throw new Exception("UserName was specified more than once");
 			}
 		} private static string _username = null;
+
+		private static byte[] GetByteArrayFromString(string s)
+		{
+			string[] ss = s.Replace(" ", "").Split(',');
+			byte[] array = new byte[ss.Length];
+			for (int i = 0; i < ss.Length; i++)
+				array[i] = Convert.ToByte(ss[i]);
+			return array;
+		}
+
+		public static byte[] InitilizationVector
+		{
+			get
+			{
+				if (_initilizationVector == null)
+				{
+					if (ConfigurationManager.AppSettings.AllKeys.Contains("InitilizationVector"))
+						_initilizationVector = GetByteArrayFromString(ConfigurationManager.AppSettings["InitilizationVector"].ToString());
+				}
+				if (_initilizationVector == null)
+					throw new Exception("Cannot find InitilizationVector in config file");
+				return _initilizationVector;
+			}
+		} private static byte[] _initilizationVector = null;
+
+		public static byte[] EncryptionKey
+		{
+			get
+			{
+				if (_encryptionKey == null)
+				{
+					if (ConfigurationManager.AppSettings.AllKeys.Contains("EncryptionKey"))
+						_encryptionKey = GetByteArrayFromString(ConfigurationManager.AppSettings["EncryptionKey"].ToString());
+				}
+				if (_encryptionKey == null)
+					throw new Exception("Cannot find EncryptionKey in config file");
+				return _encryptionKey;
+			}
+		} private static byte[] _encryptionKey = null;
 		
 	}
 }
