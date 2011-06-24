@@ -184,11 +184,13 @@ namespace OwnCloudClient
 		{
 			try
 			{
+				NLogger.Current.Trace("Getting Settings");
 				if (!SetSettings(args))
 					return;
 
 				DisplayCurrentSettings();
 
+				NLogger.Current.Info("Logging In");
 				if (!OwnCloudClient.Login(Settings.UserName, Settings.Password))
 				{
 					NLogger.Current.Warn("Invalid username or password");
@@ -247,6 +249,7 @@ namespace OwnCloudClient
 					}
 
 					lastSweep = DateTime.Now;
+					NLogger.Current.Trace(string.Format("Sleeping for {0} seconds", Settings.SleepSeconds));
 					System.Threading.Thread.Sleep(1000 * Settings.SleepSeconds);
 				}
 			}

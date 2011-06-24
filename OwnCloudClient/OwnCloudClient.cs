@@ -64,6 +64,7 @@ namespace OwnCloudClient
 		public static bool Login(string userName, string password)
 		{
 			phpId = GetPhpId();
+			NLogger.Current.Trace(string.Format("PhpId: {0}", phpId));
 			bool success = false;
 
 			StringBuilder sb = new StringBuilder();
