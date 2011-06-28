@@ -8,6 +8,7 @@ namespace OwnCloudClient
 	public static class FileProcessingHelpers
 	{
 		private enum ConfirmAnswer { Confirm, Skip, ConfirmAll, SkipAll };
+		private enum ConfirmRequest { Download, Upload, Delete };
 
 		private static ConfirmAnswer GetAnswer(string fileName)
 		{
@@ -33,14 +34,14 @@ namespace OwnCloudClient
 			}
 		}
 
-		private static List<FileInfoX> FillConfirmationList(List<FileInfoX> inList)
+		private static List<FileInfoX> FillConfirmationList(List<FileInfoX> inList, ConfirmRequest req)
 		{
 			bool assumeConfirmed = false;
 			List<FileInfoX> confirmedList = new List<FileInfoX>();
 
 			foreach (FileInfoX x in inList)
 			{
-				Console.Write(x.FileName + " ");
+				Console.Write(req.ToString() + " " + x.FileName + " ");
 				if (assumeConfirmed)
 				{
 					Console.WriteLine();
@@ -84,7 +85,7 @@ namespace OwnCloudClient
 
 			foreach (var xyz in remoteQuery)
 			{
-				Console.Write(xyz.NewFileName + " ");
+				Console.Write(ConfirmRequest.Delete.ToString() + " " + xyz.NewFileName + " ");
 				if (assumeConfirmed)
 				{
 					Console.WriteLine();
@@ -133,7 +134,7 @@ namespace OwnCloudClient
 
 			List<FileInfoX> confirmedToDownload = shouldDownloadLocalQuery;
 			if (confirmDownload)
-				confirmedToDownload = FillConfirmationList(shouldDownloadLocalQuery);
+				confirmedToDownload = FillConfirmationList(shouldDownloadLocalQuery, ConfirmRequest.Download);
 
 			foreach (var x in confirmedToDownload)
 				OwnCloudClient.Download(x.CloudNamePlusDate);
@@ -156,7 +157,7 @@ namespace OwnCloudClient
 
 			List<FileInfoX> confirmedToUpload = toUpload;
 			if (askUpload)
-				confirmedToUpload = FillConfirmationList(toUpload);
+				confirmedToUpload = FillConfirmationList(toUpload, ConfirmRequest.Upload);
 
 			foreach (var x in confirmedToUpload)
 			{
@@ -184,7 +185,7 @@ namespace OwnCloudClient
 
 			List<FileInfoX> confirmedToDelete = toDelete;
 			if (confirmDelete)
-				confirmedToDelete = FillConfirmationList(toDelete);
+				confirmedToDelete = FillConfirmationList(toDelete, ConfirmRequest.Delete);
 
 			foreach (var x in confirmedToDelete)
 			{
