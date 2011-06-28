@@ -8,8 +8,9 @@ Code currently working for version 1.2 [http://owncloud.org/releases/owncloud-1.
 4. Run: owncloudclient.exe --baseurl=https://yoursite.com/path-to-owncloud
 5. See owncloudclient.exe --help for more options
 
-
-Note: Will work with Mono (.net 3.5) but you'll need to add both:
-- System.ServiceModel.dll
-- System.Runtime.Serialization.dll
-to your bin directory or path - they are used by nlog
+Experimental work with mono(.net 3.5):
+Compile on windows and copy binaries to linux machine
+Copy the following two .net binaries from your windows machine:
+	- System.ServiceModel.dll
+	- System.Runtime.Serialization.dll
+Run via: mono OwnCloudClient.exe --baseurl=https://yoursite.com/path-to-owncloud
