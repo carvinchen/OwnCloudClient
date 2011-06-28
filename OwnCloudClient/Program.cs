@@ -8,6 +8,25 @@ namespace OwnCloudClient
 {
 	class Program
 	{
+		public static bool Validator(object sender, 
+			System.Security.Cryptography.X509Certificates.X509Certificate certificate, 
+			System.Security.Cryptography.X509Certificates.X509Chain chain, 
+			System.Net.Security.SslPolicyErrors sslPolicyErrors)
+		{
+			//TODO: add application trust logic: http://www.mono-project.com/UsingTrustedRootsRespectfully
+
+			if (sslPolicyErrors == 0)
+				return true;
+			// only ask for trust failure (you may want to handle more cases)
+			if (sslPolicyErrors == System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors)
+				return false;
+
+			Console.Write("A trust error occured while attempting to " +
+				"access the web site. Do you wish to continue this " +
+				"session even if we couldn't assess its security? ");
+			return (Console.ReadLine().ToLower() == "yes");
+		}
+
 		public static string ReadPassword()
 		{
 			Stack<string> pass = new Stack<string>();
@@ -182,6 +201,8 @@ namespace OwnCloudClient
 
 		static void Main(string[] args)
 		{
+			System.Net.ServicePointManager.ServerCertificateValidationCallback = Validator;
+
 			try
 			{
 				NLogger.Current.Trace("Getting Settings");
