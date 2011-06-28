@@ -274,6 +274,7 @@ namespace OwnCloudClient
 			FileInfo fi = new FileInfo(localFullPath);
 			decimal kbSize = Math.Round(Convert.ToDecimal(fi.Length) / Convert.ToDecimal(Math.Pow(2, 10)), 2);
 			NLogger.Current.Info(string.Format("Uploading {0} [{1} KiB]", localFullPath.Replace(Settings.WatchDir, ""), kbSize));
+			
 
 			if (!System.IO.File.Exists(localFullPath))
 			{
@@ -302,12 +303,15 @@ namespace OwnCloudClient
 				using (MyWebClient wc = new MyWebClient(200000))
 				{
 					wc.Headers.Add("Pragma: no-cache");
-					wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
+					wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));					
+					Console.WriteLine(phpId);
 
 					byte[] response = wc.UploadFile(new Uri(Settings.OwnCloudUrl + "files/upload.php?dir="), Settings.WatchDir + tmpFileName);
 					status = Encoding.ASCII.GetString(response) == "\n\ntrue" ? UploadFileStatus.Success : UploadFileStatus.UnknownError;
 				}
+				
 				System.IO.File.Delete(Settings.WatchDir + tmpFileName);
+				
 			}
 
 			if (status == UploadFileStatus.Success)

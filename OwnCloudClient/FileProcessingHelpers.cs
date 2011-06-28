@@ -167,7 +167,7 @@ namespace OwnCloudClient
 					OwnCloudClient.DeleteFile(toDeleteX.CloudNamePlusDate);
 				}
 				string f = Settings.WatchDir + x.FileName;
-				UploadFileStatus status = OwnCloudClient.UploadFile(f);
+				OwnCloudClient.UploadFile(f);			
 			}
 			return confirmedToUpload.Count;
 		}

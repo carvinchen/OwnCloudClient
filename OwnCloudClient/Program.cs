@@ -14,11 +14,13 @@ namespace OwnCloudClient
 			System.Net.Security.SslPolicyErrors sslPolicyErrors)
 		{
 			//TODO: add application trust logic: http://www.mono-project.com/UsingTrustedRootsRespectfully
+			
+			//Console.WriteLine(sslPolicyErrors.ToString());
 
-			if (sslPolicyErrors == 0)
+			if (sslPolicyErrors == System.Net.Security.SslPolicyErrors.None)
 				return true;
 			// only ask for trust failure (you may want to handle more cases)
-			if (sslPolicyErrors == System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors)
+			if (sslPolicyErrors != System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors)
 				return false;
 
 			Console.Write("A trust error occured while attempting to " +
@@ -201,7 +203,7 @@ namespace OwnCloudClient
 
 		static void Main(string[] args)
 		{
-			System.Net.ServicePointManager.ServerCertificateValidationCallback = Validator;
+			//System.Net.ServicePointManager.ServerCertificateValidationCallback = Validator;
 
 			try
 			{
@@ -249,7 +251,7 @@ namespace OwnCloudClient
 					NLogger.Current.Trace("Refreshing remotes");
 					remoteFiles = OwnCloudClient.GetRemoteFileList(); //refresh
 				}
-				int updatedLocalFiles = FileProcessingHelpers.ProcessOutDatedLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmDownload);
+				FileProcessingHelpers.ProcessOutDatedLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmDownload);
 
 				DateTime lastSweep = DateTime.Now;
 				while (true)
