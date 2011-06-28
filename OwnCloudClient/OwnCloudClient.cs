@@ -304,7 +304,6 @@ namespace OwnCloudClient
 				{
 					wc.Headers.Add("Pragma: no-cache");
 					wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));					
-					Console.WriteLine(phpId);
 
 					byte[] response = wc.UploadFile(new Uri(Settings.OwnCloudUrl + "files/upload.php?dir="), Settings.WatchDir + tmpFileName);
 					status = Encoding.ASCII.GetString(response) == "\n\ntrue" ? UploadFileStatus.Success : UploadFileStatus.UnknownError;
