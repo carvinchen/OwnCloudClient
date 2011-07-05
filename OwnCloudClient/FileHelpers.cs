@@ -41,7 +41,7 @@ namespace OwnCloudClient
 
 			foreach (FileInfoX x in inList)
 			{
-				Console.Write(req.ToString() + " " + x.FileName + " ");
+				Console.Write(req.ToString() + " " + x.LocalFileName + " ");
 				if (assumeConfirmed)
 				{
 					Console.WriteLine();
@@ -49,7 +49,7 @@ namespace OwnCloudClient
 					continue;
 				}
 
-				ConfirmAnswer a = GetAnswer(x.FileName);
+				ConfirmAnswer a = GetAnswer(x.LocalFileName);
 				if (a == ConfirmAnswer.Confirm)
 					confirmedList.Add(x);
 				else if (a == ConfirmAnswer.Skip)
@@ -69,9 +69,9 @@ namespace OwnCloudClient
 		public static int ReplaceOutDatedRemoteFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool confirmUpload)
 		{
 			var remoteQuery = (from l in localFiles
-							   join r in remoteFiles on l.CloudName equals r.CloudName
+							   join r in remoteFiles on l.CloudFileName equals r.CloudFileName
 							   where (l.LastModified - r.LastModified).Seconds >= 2
-							   select new { OldCloudNamePlusDate = r.CloudNamePlusDate, NewFileName = r.FileName }).ToList();
+							   select new { OldCloudNamePlusDate = r.CloudFileNameWithEmbeddedData, NewFileName = r.LocalFileName }).ToList();
 
 			bool assumeConfirmed = !confirmUpload;
 			Dictionary<string, string> confirmed = new Dictionary<string, string>();
@@ -79,23 +79,23 @@ namespace OwnCloudClient
 			if (remoteQuery.Count > 0)
 			{
 				NLogger.Current.Info("Found Uploads:");
-				foreach (var xyz in remoteQuery)
-					NLogger.Current.Info(xyz.NewFileName);
+				foreach (var uploadFile in remoteQuery)
+					NLogger.Current.Info(uploadFile.NewFileName);
 			}
 
-			foreach (var xyz in remoteQuery)
+			foreach (var uploadFile in remoteQuery)
 			{
-				Console.Write(ConfirmRequest.Delete.ToString() + " " + xyz.NewFileName + " ");
+				Console.Write(ConfirmRequest.Delete.ToString() + " " + uploadFile.NewFileName + " ");
 				if (assumeConfirmed)
 				{
 					Console.WriteLine();
-					confirmed.Add(xyz.OldCloudNamePlusDate, xyz.NewFileName);
+					confirmed.Add(uploadFile.OldCloudNamePlusDate, uploadFile.NewFileName);
 					continue;
 				}
 
-				ConfirmAnswer a = GetAnswer(xyz.NewFileName);
+				ConfirmAnswer a = GetAnswer(uploadFile.NewFileName);
 				if (a == ConfirmAnswer.Confirm)
-					confirmed.Add(xyz.OldCloudNamePlusDate, xyz.NewFileName);
+					confirmed.Add(uploadFile.OldCloudNamePlusDate, uploadFile.NewFileName);
 				else if (a == ConfirmAnswer.Skip)
 					continue;
 				else if (a == ConfirmAnswer.SkipAll)
@@ -103,13 +103,13 @@ namespace OwnCloudClient
 				else if (a == ConfirmAnswer.ConfirmAll)
 				{
 					assumeConfirmed = true;
-					confirmed.Add(xyz.OldCloudNamePlusDate, xyz.NewFileName);
+					confirmed.Add(uploadFile.OldCloudNamePlusDate, uploadFile.NewFileName);
 				}
 			}
 
 			foreach (var d in confirmed)
 			{
-				OwnCloudClient.DeleteFile(d.Key); //OldNameCloudName
+				OwnCloudClient.DeleteFile(d.Key);						//OldCloudNamePlusDate
 				OwnCloudClient.UploadFile(Settings.WatchDir + d.Value); //NewFileName
 			}
 			return confirmed.Count;
@@ -119,7 +119,7 @@ namespace OwnCloudClient
 		public static int ReplaceOutDatedLocalFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool confirmDownload)
 		{
 			var localQuery = from l in localFiles
-							 join r in remoteFiles on l.FileName equals r.FileName
+							 join r in remoteFiles on l.LocalFileName equals r.LocalFileName
 							 where (r.LastModified - l.LastModified).Seconds >= 2
 							 select r;
 
@@ -129,7 +129,7 @@ namespace OwnCloudClient
 			{
 				NLogger.Current.Info("Found Downloads:");
 				foreach (var x in localQuery)
-					NLogger.Current.Info(x.FileName);
+					NLogger.Current.Info(x.LocalFileName);
 			}
 
 			List<FileInfoX> confirmedToDownload = shouldDownloadLocalQuery;
@@ -137,7 +137,7 @@ namespace OwnCloudClient
 				confirmedToDownload = FillConfirmationList(shouldDownloadLocalQuery, ConfirmRequest.Download);
 
 			foreach (var x in confirmedToDownload)
-				OwnCloudClient.Download(x.CloudNamePlusDate);
+				OwnCloudClient.DownloadFile(x.CloudFileNameWithEmbeddedData);
 
 			return confirmedToDownload.Count;
 		}
@@ -146,13 +146,13 @@ namespace OwnCloudClient
 		//files that exist on disk and the lastmodified date is greater than our last sweep -- assume locally modified and upload
 		public static int UploadNewLocalFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool askUpload, DateTime lastSweep)
 		{
-			var toUpload = localFiles.Where(x => !remoteFiles.Select(y => y.CloudName).Contains(x.CloudName) || x.LastModified > lastSweep).ToList();
+			var toUpload = localFiles.Where(x => !remoteFiles.Select(y => y.CloudFileName).Contains(x.CloudFileName) || x.LastModified > lastSweep).ToList();
 
 			if (toUpload.Count > 0)
 			{
 				NLogger.Current.Info("Found Uploads:");
 				foreach (var u in toUpload)
-					NLogger.Current.Info(u.FileName);
+					NLogger.Current.Info(u.LocalFileName);
 			}
 
 			List<FileInfoX> confirmedToUpload = toUpload;
@@ -163,10 +163,10 @@ namespace OwnCloudClient
 			{
 				if (x.LastModified > lastSweep)
 				{
-					var toDeleteX = remoteFiles.Where(y => y.CloudName == x.CloudName).FirstOrDefault();
-					OwnCloudClient.DeleteFile(toDeleteX.CloudNamePlusDate);
+					var toDeleteX = remoteFiles.Where(y => y.CloudFileName == x.CloudFileName).FirstOrDefault();
+					OwnCloudClient.DeleteFile(toDeleteX.CloudFileNameWithEmbeddedData);
 				}
-				string f = Settings.WatchDir + x.FileName;
+				string f = Settings.WatchDir + x.LocalFileName;
 				OwnCloudClient.UploadFile(f);			
 			}
 			return confirmedToUpload.Count;
@@ -175,12 +175,12 @@ namespace OwnCloudClient
 		//files that exist in the cloud but not on disk -- assume they were deleted
 		public static int DeleteRemoteFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool confirmDelete)
 		{
-			var toDelete = remoteFiles.Where(x => !localFiles.Select(y => y.CloudName).Contains(x.CloudName)).ToList();
+			var toDelete = remoteFiles.Where(x => !localFiles.Select(y => y.CloudFileName).Contains(x.CloudFileName)).ToList();
 			if (toDelete.Count > 0)
 			{
 				NLogger.Current.Info("Found Deletes:");
 				foreach (var d in toDelete)
-					NLogger.Current.Info(d.FileName);
+					NLogger.Current.Info(d.LocalFileName);
 			}
 
 			List<FileInfoX> confirmedToDelete = toDelete;
@@ -189,9 +189,9 @@ namespace OwnCloudClient
 
 			foreach (var x in confirmedToDelete)
 			{
-				if (string.IsNullOrEmpty(x.CloudName))
+				if (string.IsNullOrEmpty(x.CloudFileName))
 					continue;
-				OwnCloudClient.DeleteFile(x.CloudNamePlusDate);
+				OwnCloudClient.DeleteFile(x.CloudFileNameWithEmbeddedData);
 			}
 			return confirmedToDelete.Count;
 		}

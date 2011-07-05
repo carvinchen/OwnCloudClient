@@ -137,11 +137,23 @@ namespace OwnCloudClient
 			set { SetBool("DownloadAll", ref _downloadAll, value); }
 		} private static bool? _downloadAll = null;
 
+		public static string DownloadAllPrefix
+		{
+			get { return GetString("DownloadAllPrefix", _downloadAllPrefix); }
+			set { SetString("DownloadAllPrefix", ref _downloadAllPrefix, value); }
+		} private static string _downloadAllPrefix = null;
+
 		public static bool UploadOnly
 		{
 			get { return GetBool("UploadOnly", _uploadOnly); }
 			set { SetBool("UploadOnly", ref _uploadOnly, value); }
 		} private static bool? _uploadOnly = null;
+
+		public static bool ListRemoteFiles
+		{
+			get { return GetBool("ListRemoteFiles", _listRemoteFiles); }
+			set { SetBool("ListRemoteFiles", ref _listRemoteFiles, value); }
+		} private static bool? _listRemoteFiles = null;
 
 		public static int SleepSeconds
 		{

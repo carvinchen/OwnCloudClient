@@ -7,10 +7,10 @@ namespace OwnCloudClient
 {
 	public class FileInfoX
 	{
-		public string CloudNamePlusDate { get; set; }
-		public string CloudName { get; set; }
+		public string CloudFileNameWithEmbeddedData { get; set; }
+		public string CloudFileName { get; set; }
 		public DateTime LastModified { get; set; }
-		public string FileName { get; set; }
-		public string EncryptedCloudNamePlusDate { get; set; }
+		public string LocalFileName { get; set; }
+		public string EncryptedCloudFileNameWithEmbeddedData { get; set; }
 	}
 }

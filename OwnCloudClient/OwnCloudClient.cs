@@ -13,17 +13,24 @@ namespace OwnCloudClient
 	public static class OwnCloudClient
 	{
 		private static string phpId = null;
-		
-		//!FileNameProcessing
-		private static string GetLocalFilePathFromCloudFileNamePlusDate(string cloudFileNamePlusDate)
+
+		private static string EmbedDataIntoFileName(string localFullPath, DateTime lastModified)
 		{
-			return Settings.WatchDir + cloudFileNamePlusDate.Substring(0, cloudFileNamePlusDate.Length - (4 + 13));
+			return localFullPath.Replace(Settings.WatchDir, "").Replace(System.IO.Path.DirectorySeparatorChar, '~') +
+							".enc" +
+							"." + GetUnixTimeStamp(lastModified);
 		}
 
 		//!FileNameProcessing
-		private static DateTime GetDateTimeFromCloudFilePlusDate(string cloudFileNamePlusDate)
+		private static string GetLocalFilePathFromCloudFileNameWithEmbeddedData(string cloudFileNameWithEmbeddedData)
 		{
-			string sUnixTime = cloudFileNamePlusDate.Substring(cloudFileNamePlusDate.Length - 12, 12);
+			return Settings.WatchDir + cloudFileNameWithEmbeddedData.Substring(0, cloudFileNameWithEmbeddedData.Length - (4 + 13));
+		}
+
+		//!FileNameProcessing
+		private static DateTime GetLastModifiedFromCloudFileNameWithEmbeddedData(string cloudFileNameWithEmbeddedData)
+		{
+			string sUnixTime = cloudFileNameWithEmbeddedData.Substring(cloudFileNameWithEmbeddedData.Length - 12, 12);
 			return new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(Convert.ToDouble(sUnixTime));
 		}
 
@@ -40,25 +47,24 @@ namespace OwnCloudClient
 		}
 
 		//!FileNameProcessing
-		private static FileInfoX CreateFileInfoXFromEncryptedCloudFileName(string encryptedCloudFileNamePlusDate)
+		private static FileInfoX CreateFileInfoXFromcloudFileNameWithEmbeddedData(string cloudFileNameWithEmbeddedData)
 		{
-			string cloudNamePlusDate = DecryptFileName(encryptedCloudFileNamePlusDate.Trim(new char[] { '\"' }));
-			string cloudName = cloudNamePlusDate.Substring(0, cloudNamePlusDate.Length - 13); //13 for '.' + unix date
+			string cloudFileName = cloudFileNameWithEmbeddedData.Substring(0, cloudFileNameWithEmbeddedData.Length - 13); //13 for '.' + unix date
 
-			string sUnixTime = cloudNamePlusDate.Substring(cloudNamePlusDate.Length - 12, 12);
+			string sUnixTime = cloudFileNameWithEmbeddedData.Substring(cloudFileNameWithEmbeddedData.Length - 12, 12);
 			DateTime modified = new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(Convert.ToDouble(sUnixTime));
 
-			string localFileName = cloudName.Replace('~', System.IO.Path.DirectorySeparatorChar);
+			string localFileName = cloudFileName.Replace('~', System.IO.Path.DirectorySeparatorChar);
 			localFileName = localFileName.Substring(0, localFileName.Length - 4);
 
-			if (!string.IsNullOrEmpty(cloudNamePlusDate))
+			if (!string.IsNullOrEmpty(cloudFileNameWithEmbeddedData))
 				return new FileInfoX() 
 				{ 
-					CloudName = cloudName, 
+					CloudFileName = cloudFileName, 
 					LastModified = modified, 
-					CloudNamePlusDate = cloudNamePlusDate, 
-					FileName = localFileName,
-					EncryptedCloudNamePlusDate = EncryptFileName(cloudNamePlusDate)
+					CloudFileNameWithEmbeddedData = cloudFileNameWithEmbeddedData, 
+					LocalFileName = localFileName,
+					EncryptedCloudFileNameWithEmbeddedData = EncryptFileName(cloudFileNameWithEmbeddedData)
 				};
 			return null;
 		}
@@ -91,11 +97,50 @@ namespace OwnCloudClient
 			return id;
 		}
 
-		public static string GetUnixTimeStamp(DateTime modifiedDate)
+		//http://stackoverflow.com/questions/929276/how-to-recursively-list-all-the-files-in-a-directory-in-c
+		private static IEnumerable<string> GetFiles(string path)
+		{
+			Queue<string> queue = new Queue<string>();
+			queue.Enqueue(path);
+			while (queue.Count > 0)
+			{
+				path = queue.Dequeue();
+				try
+				{
+					foreach (string subDir in Directory.GetDirectories(path))
+					{
+						queue.Enqueue(subDir);
+					}
+				}
+				catch (Exception ex)
+				{
+					Console.Error.WriteLine(ex);
+				}
+
+				string[] files = null;
+				try
+				{
+					files = Directory.GetFiles(path);
+				}
+				catch (Exception ex)
+				{
+					Console.Error.WriteLine(ex);
+				}
+
+				if (files != null)
+				{
+					for (int i = 0; i < files.Length; i++)
+						yield return files[i];
+				}
+			}
+		}
+
+		private static string GetUnixTimeStamp(DateTime modifiedDate)
 		{
 			TimeSpan ts = (modifiedDate - new DateTime(1970, 1, 1, 0, 0, 0));
 			return string.Format("{0:000000000000}", ts.TotalSeconds); //12 zeros
 		}
+
 
 		public static bool Login(string userName, string password)
 		{
@@ -155,46 +200,6 @@ namespace OwnCloudClient
 			return success;
 		}
 
-		public static void Download(string cloudFileNamePlusDate)
-		{
-			try
-			{
-				using (WebClient wc = new WebClient())
-				{
-					wc.Headers.Add("Pragma: no-cache");
-					wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
-					NLogger.Current.Info(string.Format("Downloading {0}", cloudFileNamePlusDate));
-					Uri uri = new Uri(string.Concat(Settings.OwnCloudUrl, "files/api.php?action=get&dir=&file=", EncryptFileName(cloudFileNamePlusDate))); //cbTODO: urlencode filename?
-					wc.DownloadFile(uri, Settings.WatchDir + cloudFileNamePlusDate);
-				}
-
-				byte[] decryptedContents = Encryption.DecryptFile(Settings.WatchDir + cloudFileNamePlusDate);
-				System.IO.File.Delete(Settings.WatchDir + cloudFileNamePlusDate);
-
-				if (cloudFileNamePlusDate.Contains('~'))
-				{
-					cloudFileNamePlusDate = cloudFileNamePlusDate.Replace('~', System.IO.Path.DirectorySeparatorChar);
-					string fileDirectory = cloudFileNamePlusDate.Substring(0, cloudFileNamePlusDate.LastIndexOf(System.IO.Path.DirectorySeparatorChar.ToString()));
-
-					string currentPath = Settings.WatchDir + fileDirectory; ;
-					if (!System.IO.Directory.Exists(currentPath))
-						System.IO.Directory.CreateDirectory(currentPath);
-				}
-
-				string localFileName = GetLocalFilePathFromCloudFileNamePlusDate(cloudFileNamePlusDate);
-				System.IO.File.WriteAllBytes(localFileName, decryptedContents);
-
-				DateTime modified = GetDateTimeFromCloudFilePlusDate(cloudFileNamePlusDate);
-				File.SetLastWriteTime(localFileName, modified);
-
-				NLogger.Current.Info("Download finished.");
-			}
-			catch (Exception ex)
-			{
-				NLogger.Current.ErrorException(string.Format("Problem downloading {0}.", cloudFileNamePlusDate), ex);
-			}
-		}
-
 		public static List<FileInfoX> GetRemoteFileList()
 		{
 			List<FileInfoX> files = new List<FileInfoX>();
@@ -213,51 +218,15 @@ namespace OwnCloudClient
 			{
 				if (x != null && x.SelectToken("name") != null)
 				{
-					FileInfoX fix = CreateFileInfoXFromEncryptedCloudFileName(x.SelectToken("name").ToString());
+					string cloudNamePlusDate = DecryptFileName(x.SelectToken("name").ToString().Trim(new char[] { '\"' }));
+
+					FileInfoX fix = CreateFileInfoXFromcloudFileNameWithEmbeddedData(cloudNamePlusDate);
 					if (x != null)
 						files.Add(fix);
 				}
 			}
 
 			return files;
-		}
-
-		//http://stackoverflow.com/questions/929276/how-to-recursively-list-all-the-files-in-a-directory-in-c
-		private static IEnumerable<string> GetFiles(string path)
-		{
-			Queue<string> queue = new Queue<string>();
-			queue.Enqueue(path);
-			while (queue.Count > 0)
-			{
-				path = queue.Dequeue();
-				try
-				{
-					foreach (string subDir in Directory.GetDirectories(path))
-					{
-						queue.Enqueue(subDir);
-					}
-				}
-				catch (Exception ex)
-				{
-					Console.Error.WriteLine(ex);
-				}
-
-				string[] files = null;
-				try
-				{
-					files = Directory.GetFiles(path);
-				}
-				catch (Exception ex)
-				{
-					Console.Error.WriteLine(ex);
-				}
-
-				if (files != null)
-				{
-					for (int i = 0; i < files.Length; i++)
-						yield return files[i];
-				}
-			}
 		}
 
 		public static List<FileInfoX> GetLocalFileList()
@@ -277,20 +246,21 @@ namespace OwnCloudClient
 				DateTime lastWrite = new DateTime(info.LastWriteTime.Year, info.LastWriteTime.Month, info.LastWriteTime.Day, info.LastWriteTime.Hour, info.LastWriteTime.Minute, info.LastWriteTime.Second); //do it this way to avoid milisecond comparison problemsinfo.LastWriteTime;
 
 				//!FileNameProcessing
-				x.CloudName = item.Replace(Settings.WatchDir, "").Replace(System.IO.Path.DirectorySeparatorChar, '~') + ".enc";
+				x.CloudFileName = item.Replace(Settings.WatchDir, "").Replace(System.IO.Path.DirectorySeparatorChar, '~') + ".enc";
 				x.LastModified = lastWrite;
-				x.FileName = item.Replace(Settings.WatchDir, "");
-				x.CloudNamePlusDate = x.CloudName + "." + OwnCloudClient.GetUnixTimeStamp(lastWrite);
-				x.EncryptedCloudNamePlusDate = EncryptFileName(x.CloudNamePlusDate);
+				x.LocalFileName = item.Replace(Settings.WatchDir, "");
+				x.CloudFileNameWithEmbeddedData = x.CloudFileName + "." + OwnCloudClient.GetUnixTimeStamp(lastWrite);
+				x.EncryptedCloudFileNameWithEmbeddedData = EncryptFileName(x.CloudFileNameWithEmbeddedData);
 				files.Add(x);
 			}
 			return files;
 		}
 
-		public static void PrintFileList()
+		public static void PrintRemoteFileList()
 		{
-			foreach (var s in GetRemoteFileList())
-				NLogger.Current.Info(s.CloudName);
+			IOrderedEnumerable<FileInfoX> files = GetRemoteFileList().OrderBy(x => x.CloudFileName);
+			foreach (var f in files)
+				NLogger.Current.Info(f.LocalFileName);
 		}
 
 		public static UploadFileStatus UploadFile(string localFullPath)
@@ -320,24 +290,22 @@ namespace OwnCloudClient
 				byte[] encrypted = Encryption.EncryptFile(localFullPath);
 
 				//!FileNameProcessing
-				string tmpFileName = localFullPath.Replace(Settings.WatchDir, "").Replace(System.IO.Path.DirectorySeparatorChar, '~') +
-							".enc" +
-							"." + GetUnixTimeStamp(fi.LastWriteTime);
+				string cloudFileNameWithEmbeddedData = EmbedDataIntoFileName(localFullPath, fi.LastWriteTime);
 
-				string encryptedTmpFileName = EncryptFileName(tmpFileName);
+				string encryptedFileName = EncryptFileName(cloudFileNameWithEmbeddedData);
 
-				System.IO.File.WriteAllBytes(Settings.WatchDir + encryptedTmpFileName, encrypted);
+				System.IO.File.WriteAllBytes(Settings.WatchDir + encryptedFileName, encrypted);
 
 				using (MyWebClient wc = new MyWebClient(200000))
 				{
 					wc.Headers.Add("Pragma: no-cache");
 					wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
 
-					byte[] response = wc.UploadFile(new Uri(Settings.OwnCloudUrl + "files/upload.php?dir="), Settings.WatchDir + encryptedTmpFileName);
+					byte[] response = wc.UploadFile(new Uri(Settings.OwnCloudUrl + "files/upload.php?dir="), Settings.WatchDir + encryptedFileName);
 					status = Encoding.ASCII.GetString(response) == "\n\ntrue" ? UploadFileStatus.Success : UploadFileStatus.UnknownError;
 				}
 
-				System.IO.File.Delete(Settings.WatchDir + encryptedTmpFileName);
+				System.IO.File.Delete(Settings.WatchDir + encryptedFileName);
 				
 			}
 
@@ -348,13 +316,13 @@ namespace OwnCloudClient
 			return status;
 		}
 
-		public static bool DeleteFile(string cloudFileName)
+		public static bool DeleteFile(string cloudFileNameWithEmbeddedData)
 		{
 			bool success = false;
 			using (WebClient wc = new WebClient())
 			{
-				NLogger.Current.Info(string.Format("Deleting {0}", cloudFileName));
-				string data3 = string.Format("action=delete&dir=&file={0}", EncryptFileName(cloudFileName));
+				NLogger.Current.Info(string.Format("Deleting {0}", cloudFileNameWithEmbeddedData));
+				string data3 = string.Format("action=delete&dir=&file={0}", EncryptFileName(cloudFileNameWithEmbeddedData));
 				wc.Headers.Add("Pragma: no-cache");
 				wc.Headers.Add("Content-Type: application/x-www-form-urlencoded");
 				wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
@@ -370,9 +338,49 @@ namespace OwnCloudClient
 			return success;
 		}
 
+		public static void DownloadFile(string cloudFileNameWithEmbeddedData)
+		{
+			try
+			{
+				using (WebClient wc = new WebClient())
+				{
+					wc.Headers.Add("Pragma: no-cache");
+					wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
+					NLogger.Current.Info(string.Format("Downloading {0}", cloudFileNameWithEmbeddedData));
+					Uri uri = new Uri(string.Concat(Settings.OwnCloudUrl, "files/api.php?action=get&dir=&file=", EncryptFileName(cloudFileNameWithEmbeddedData))); //cbTODO: urlencode filename?
+					wc.DownloadFile(uri, Settings.WatchDir + cloudFileNameWithEmbeddedData);
+				}
+
+				byte[] decryptedContents = Encryption.DecryptFile(Settings.WatchDir + cloudFileNameWithEmbeddedData);
+				System.IO.File.Delete(Settings.WatchDir + cloudFileNameWithEmbeddedData);
+
+				if (cloudFileNameWithEmbeddedData.Contains('~'))
+				{
+					cloudFileNameWithEmbeddedData = cloudFileNameWithEmbeddedData.Replace('~', System.IO.Path.DirectorySeparatorChar);
+					string fileDirectory = cloudFileNameWithEmbeddedData.Substring(0, cloudFileNameWithEmbeddedData.LastIndexOf(System.IO.Path.DirectorySeparatorChar.ToString()));
+
+					string currentPath = Settings.WatchDir + fileDirectory; ;
+					if (!System.IO.Directory.Exists(currentPath))
+						System.IO.Directory.CreateDirectory(currentPath);
+				}
+
+				string localFileName = GetLocalFilePathFromCloudFileNameWithEmbeddedData(cloudFileNameWithEmbeddedData);
+				System.IO.File.WriteAllBytes(localFileName, decryptedContents);
+
+				DateTime modified = GetLastModifiedFromCloudFileNameWithEmbeddedData(cloudFileNameWithEmbeddedData);
+				File.SetLastWriteTime(localFileName, modified);
+
+				NLogger.Current.Info("Download finished.");
+			}
+			catch (Exception ex)
+			{
+				NLogger.Current.ErrorException(string.Format("Problem downloading {0}.", cloudFileNameWithEmbeddedData), ex);
+			}
+		}
+
 		public static bool ShouldDownload(FileInfoX f)
 		{
-			string fname = Settings.WatchDir + f.FileName;
+			string fname = Settings.WatchDir + f.LocalFileName;
 			bool shouldDownload = false;
 
 			if (System.IO.File.Exists(fname))
@@ -392,17 +400,17 @@ namespace OwnCloudClient
 			foreach (var f in GetRemoteFileList())
 			{
 				if (ShouldDownload(f))
-					OwnCloudClient.Download(f.CloudNamePlusDate);
+					OwnCloudClient.DownloadFile(f.CloudFileNameWithEmbeddedData);
 			}
 		}
 
 		public static void DownloadAll(string startsWith)
 		{
 			var files = GetRemoteFileList();
-			foreach (var f in files.Where(x => x.CloudName.StartsWith(startsWith)))
+			foreach (var f in files.Where(x => x.CloudFileName.StartsWith(startsWith)))
 			{
 				if (ShouldDownload(f))
-					Download(f.CloudNamePlusDate);
+					DownloadFile(f.CloudFileNameWithEmbeddedData);
 			}
 		}
 

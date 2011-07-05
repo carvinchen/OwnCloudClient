@@ -29,7 +29,7 @@ namespace OwnCloudClient
 		//    return (Console.ReadLine().ToLower() == "yes");
 		//}
 
-		public static string ReadPassword()
+		private static string ReadPassword()
 		{
 			Stack<string> pass = new Stack<string>();
 			for (ConsoleKeyInfo consKeyInfo = Console.ReadKey(true); consKeyInfo.Key != ConsoleKey.Enter; consKeyInfo = Console.ReadKey(true))
@@ -60,7 +60,7 @@ namespace OwnCloudClient
 			return string.Join(string.Empty, password);
 		}
 
-		public static void DisplaySampleUseage()
+		private static void DisplaySampleUseage()
 		{
 			Console.WriteLine("Note: Unless downloadonly or runonce flags are set, program will continue to monitor changes");
 			Console.WriteLine();
@@ -72,11 +72,12 @@ namespace OwnCloudClient
 			Console.WriteLine("--sleepseconds\t\tNumber of seconds to wait before checking for changes (default = 10)");
 			Console.WriteLine("--watchdir\t\tThe directory (recursive) to watch for changes (default currentDir\\data\\)");
 			Console.WriteLine("--owncloudurl\t\tThe URL to your OwnCloud instance");
+			Console.WriteLine("--downloadallprefix\t\tDownload everything that starts with this");
 			Console.WriteLine("--version\t\tDisplay version informatoon");
 			Console.WriteLine("--help\t\t\tDisplay this screen");    
 		}
 
-		public static void DisplayCurrentSettings()
+		private static void DisplayCurrentSettings()
 		{
 			NLogger.Current.Debug("Options: ");
 			NLogger.Current.Debug("confirmdownload: " + !Settings.NoConfirmDownload);
@@ -86,12 +87,14 @@ namespace OwnCloudClient
 			NLogger.Current.Debug("downloadall: " + Settings.DownloadAll);
 			NLogger.Current.Debug("sleepSeconds: " + Settings.SleepSeconds);
 			NLogger.Current.Debug("watchdir: " + Settings.WatchDir);
+			NLogger.Current.Debug("listremotefiles: " + Settings.ListRemoteFiles);
+			NLogger.Current.Debug("downloadallprefix: " + Settings.DownloadAllPrefix);
 			NLogger.Current.Debug("owncloudurl: " + Settings.OwnCloudUrl);
 		}
-
-		//http://stackoverflow.com/questions/1600962/c-displaying-the-build-date
+		
 		private static DateTime RetrieveLinkerTimestamp()
 		{
+			//http://stackoverflow.com/questions/1600962/c-displaying-the-build-date
 			string filePath = System.Reflection.Assembly.GetCallingAssembly().Location;
 			const int c_PeHeaderOffset = 60;
 			const int c_LinkerTimestampOffset = 8;
@@ -125,7 +128,7 @@ namespace OwnCloudClient
 			Console.WriteLine(string.Format("Version: {0}.{1}.{2}.{3}", v.Major, v.Minor, v.Revision, v.Build));
 		}
 
-		public static bool SetSettings(string[] args)
+		private static bool SetSettings(string[] args)
 		{
 			bool success = true;
 
@@ -143,6 +146,8 @@ namespace OwnCloudClient
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "owncloudurl" });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "help", IsFlag = true });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "version", IsFlag = true });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "downloadallprefix"});
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "listremotefiles", IsFlag = true });
 
 				p.Parse(args);
 
@@ -164,6 +169,7 @@ namespace OwnCloudClient
 				Settings.RunOnce = p.IsOptionDefined("runonce");
 				Settings.DownloadAll = p.IsOptionDefined("downloadall");
 				Settings.UploadOnly = p.IsOptionDefined("uploadonly");
+				Settings.ListRemoteFiles = p.IsOptionDefined("listremotefiles");
 
 				if (p.IsOptionDefined("watchdir"))
 					Settings.WatchDir = p.GetOptionStringValue("watchdir");
@@ -171,6 +177,8 @@ namespace OwnCloudClient
 					Settings.OwnCloudUrl = p.GetOptionStringValue("owncloudurl");
 				if (p.IsOptionDefined("sleepseconds"))
 					Settings.SleepSeconds = Convert.ToInt32(p.GetOptionStringValue("sleepseconds"));
+				if (p.IsOptionDefined("downloadallprefix"))
+					Settings.DownloadAllPrefix = p.GetOptionStringValue("downloadallprefix");
 
 				if (string.IsNullOrEmpty(Settings.UserName))
 				{
@@ -202,7 +210,6 @@ namespace OwnCloudClient
 		static void Main(string[] args)
 		{
 			//System.Net.ServicePointManager.ServerCertificateValidationCallback = Validator;
-
 			try
 			{
 				NLogger.Current.Trace("Getting Settings");
@@ -218,7 +225,14 @@ namespace OwnCloudClient
 					return;
 				}
 
-				if (Settings.DownloadAll)
+
+				if (Settings.ListRemoteFiles)
+				{
+					OwnCloudClient.PrintRemoteFileList();
+					return;
+				}
+
+				if (Settings.DownloadAll || !string.IsNullOrEmpty(Settings.DownloadAllPrefix))
 				{
 					//OwnCloudClient.DownloadAll("vccdrom~");
 					ConsoleColor currentColor = Console.ForegroundColor;
@@ -230,7 +244,12 @@ namespace OwnCloudClient
 					Console.WriteLine();
 
 					if (k.KeyChar == 'y' || k.KeyChar == 'Y')
-						OwnCloudClient.DownloadAll();
+					{
+						if (!string.IsNullOrEmpty(Settings.DownloadAllPrefix))
+							OwnCloudClient.DownloadAll(Settings.DownloadAllPrefix);
+						else
+							OwnCloudClient.DownloadAll();
+					}
 
 					return; //bail out of program
 				}
