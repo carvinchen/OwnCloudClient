@@ -11,5 +11,6 @@ namespace OwnCloudClient
 		public string CloudName { get; set; }
 		public DateTime LastModified { get; set; }
 		public string FileName { get; set; }
+		public string EncryptedCloudNamePlusDate { get; set; }
 	}
 }

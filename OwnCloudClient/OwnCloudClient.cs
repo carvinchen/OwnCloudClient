@@ -13,18 +13,54 @@ namespace OwnCloudClient
 	public static class OwnCloudClient
 	{
 		private static string phpId = null;
-
+		
+		//!FileNameProcessing
 		private static string GetLocalFilePathFromCloudFileNamePlusDate(string cloudFileNamePlusDate)
 		{
-			//!FileNameProcessing
 			return Settings.WatchDir + cloudFileNamePlusDate.Substring(0, cloudFileNamePlusDate.Length - (4 + 13));
 		}
 
+		//!FileNameProcessing
 		private static DateTime GetDateTimeFromCloudFilePlusDate(string cloudFileNamePlusDate)
 		{
-			//!FileNameProcessing
 			string sUnixTime = cloudFileNamePlusDate.Substring(cloudFileNamePlusDate.Length - 12, 12);
 			return new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(Convert.ToDouble(sUnixTime));
+		}
+
+		private static string EncryptFileName(string fileName)
+		{
+			byte[] bs = Encoding.ASCII.GetBytes(fileName);
+			return Convert.ToBase64String(Encryption.EncryptBytes(bs)).Replace('/', '-').Replace('+', '_');
+		}
+
+		private static string DecryptFileName(string encryptedFileName)
+		{
+			byte[] bs = Convert.FromBase64String(encryptedFileName.Replace('-', '/').Replace('_', '+'));
+			return Encoding.ASCII.GetString(Encryption.DecryptBytes(bs));
+		}
+
+		//!FileNameProcessing
+		private static FileInfoX CreateFileInfoXFromEncryptedCloudFileName(string encryptedCloudFileNamePlusDate)
+		{
+			string cloudNamePlusDate = DecryptFileName(encryptedCloudFileNamePlusDate.Trim(new char[] { '\"' }));
+			string cloudName = cloudNamePlusDate.Substring(0, cloudNamePlusDate.Length - 13); //13 for '.' + unix date
+
+			string sUnixTime = cloudNamePlusDate.Substring(cloudNamePlusDate.Length - 12, 12);
+			DateTime modified = new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(Convert.ToDouble(sUnixTime));
+
+			string localFileName = cloudName.Replace('~', System.IO.Path.DirectorySeparatorChar);
+			localFileName = localFileName.Substring(0, localFileName.Length - 4);
+
+			if (!string.IsNullOrEmpty(cloudNamePlusDate))
+				return new FileInfoX() 
+				{ 
+					CloudName = cloudName, 
+					LastModified = modified, 
+					CloudNamePlusDate = cloudNamePlusDate, 
+					FileName = encryptedCloudFileNamePlusDate,
+					EncryptedCloudNamePlusDate = EncryptFileName(cloudNamePlusDate)
+				};
+			return null;
 		}
 
 		private static string GetPhpId()
@@ -128,7 +164,7 @@ namespace OwnCloudClient
 					wc.Headers.Add("Pragma: no-cache");
 					wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
 					NLogger.Current.Info(string.Format("Downloading {0}", cloudFileNamePlusDate));
-					Uri uri = new Uri(string.Concat(Settings.OwnCloudUrl, "files/api.php?action=get&dir=&file=", cloudFileNamePlusDate)); //cbTODO: urlencode filename?
+					Uri uri = new Uri(string.Concat(Settings.OwnCloudUrl, "files/api.php?action=get&dir=&file=", EncryptFileName(cloudFileNamePlusDate))); //cbTODO: urlencode filename?
 					wc.DownloadFile(uri, Settings.WatchDir + cloudFileNamePlusDate);
 				}
 
@@ -177,20 +213,9 @@ namespace OwnCloudClient
 			{
 				if (x != null && x.SelectToken("name") != null)
 				{
-					//!FileNameProcessing
-					string cloudNamePlusDate = x.SelectToken("name").ToString().Trim(new char[] { '\"' });
-					string cloudName = cloudNamePlusDate.Substring(0, cloudNamePlusDate.Length - 13); //13 for '.' + unix date
-
-					//!FileNameProcessing
-					string sUnixTime = cloudNamePlusDate.Substring(cloudNamePlusDate.Length - 12, 12);
-					DateTime modified = new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(Convert.ToDouble(sUnixTime));
-
-					//!FileNameProcessing
-					string fileName = cloudName.Replace('~', System.IO.Path.DirectorySeparatorChar);
-					fileName = fileName.Substring(0, fileName.Length - 4);
-
-					if (!string.IsNullOrEmpty(cloudNamePlusDate))
-						files.Add(new FileInfoX() { CloudName = cloudName, LastModified = modified, CloudNamePlusDate = cloudNamePlusDate, FileName = fileName });
+					FileInfoX fix = CreateFileInfoXFromEncryptedCloudFileName(x.SelectToken("name").ToString());
+					if (x != null)
+						files.Add(fix);
 				}
 			}
 
@@ -256,6 +281,7 @@ namespace OwnCloudClient
 				x.LastModified = lastWrite;
 				x.FileName = item.Replace(Settings.WatchDir, "");
 				x.CloudNamePlusDate = x.CloudName + "." + OwnCloudClient.GetUnixTimeStamp(lastWrite);
+				x.EncryptedCloudNamePlusDate = EncryptFileName(x.CloudNamePlusDate);
 				files.Add(x);
 			}
 			return files;
@@ -298,18 +324,20 @@ namespace OwnCloudClient
 							".enc" +
 							"." + GetUnixTimeStamp(fi.LastWriteTime);
 
-				System.IO.File.WriteAllBytes(Settings.WatchDir + tmpFileName, encrypted);
+				string encryptedTmpFileName = EncryptFileName(tmpFileName);
+
+				System.IO.File.WriteAllBytes(Settings.WatchDir + encryptedTmpFileName, encrypted);
 
 				using (MyWebClient wc = new MyWebClient(200000))
 				{
 					wc.Headers.Add("Pragma: no-cache");
-					wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));					
+					wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
 
-					byte[] response = wc.UploadFile(new Uri(Settings.OwnCloudUrl + "files/upload.php?dir="), Settings.WatchDir + tmpFileName);
+					byte[] response = wc.UploadFile(new Uri(Settings.OwnCloudUrl + "files/upload.php?dir="), Settings.WatchDir + encryptedTmpFileName);
 					status = Encoding.ASCII.GetString(response) == "\n\ntrue" ? UploadFileStatus.Success : UploadFileStatus.UnknownError;
 				}
-				
-				System.IO.File.Delete(Settings.WatchDir + tmpFileName);
+
+				System.IO.File.Delete(Settings.WatchDir + encryptedTmpFileName);
 				
 			}
 
