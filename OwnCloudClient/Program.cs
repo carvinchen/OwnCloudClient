@@ -158,18 +158,13 @@ namespace OwnCloudClient
 					return false;
 				}
 
-				if (p.IsOptionDefined("noconfirmdownload"))
-					Settings.NoConfirmDownload = true;
-				if (p.IsOptionDefined("noconfirmupload"))
-					Settings.NoConfirmUpload = true;
-				if (p.IsOptionDefined("noconfirmdelete"))
-					Settings.NoConfirmDelete = true;
-				if (p.IsOptionDefined("runonce"))
-					Settings.RunOnce = true;
-				if (p.IsOptionDefined("downloadall"))
-					Settings.DownloadAll = true;
-				if (p.IsOptionDefined("uploadonly"))
-					Settings.UploadOnly = true;
+				Settings.NoConfirmDownload = p.IsOptionDefined("noconfirmdownload");
+				Settings.NoConfirmUpload = p.IsOptionDefined("noconfirmupload");
+				Settings.NoConfirmDelete = p.IsOptionDefined("noconfirmdelete");
+				Settings.RunOnce = p.IsOptionDefined("runonce");
+				Settings.DownloadAll = p.IsOptionDefined("downloadall");
+				Settings.UploadOnly = p.IsOptionDefined("uploadonly");
+
 				if (p.IsOptionDefined("watchdir"))
 					Settings.WatchDir = p.GetOptionStringValue("watchdir");
 				if (p.IsOptionDefined("owncloudurl"))
