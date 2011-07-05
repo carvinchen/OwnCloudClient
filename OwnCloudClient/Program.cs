@@ -83,7 +83,7 @@ namespace OwnCloudClient
 			NLogger.Current.Debug("confirmupload: " + !Settings.NoConfirmUpload);
 			NLogger.Current.Debug("confirmdelete: " + !Settings.NoConfirmDelete);
 			NLogger.Current.Debug("runonce: " + Settings.RunOnce);
-			NLogger.Current.Debug("downloadonly: " + Settings.DownloadOnly);
+			NLogger.Current.Debug("downloadall: " + Settings.DownloadAll);
 			NLogger.Current.Debug("sleepSeconds: " + Settings.SleepSeconds);
 			NLogger.Current.Debug("watchdir: " + Settings.WatchDir);
 			NLogger.Current.Debug("owncloudurl: " + Settings.OwnCloudUrl);
@@ -136,7 +136,8 @@ namespace OwnCloudClient
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "noconfirmupload", IsFlag = true });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "noconfirmdelete", IsFlag = true });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "runonce", IsFlag = true });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "downloadonly", IsFlag = true });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "downloadall", IsFlag = true });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "uploadonly", IsFlag = true });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "sleepseconds" });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "watchdir" });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "owncloudurl" });
@@ -165,8 +166,10 @@ namespace OwnCloudClient
 					Settings.NoConfirmDelete = true;
 				if (p.IsOptionDefined("runonce"))
 					Settings.RunOnce = true;
-				if (p.IsOptionDefined("downloadonly"))
-					Settings.DownloadOnly = true;
+				if (p.IsOptionDefined("downloadall"))
+					Settings.DownloadAll = true;
+				if (p.IsOptionDefined("uploadonly"))
+					Settings.UploadOnly = true;
 				if (p.IsOptionDefined("watchdir"))
 					Settings.WatchDir = p.GetOptionStringValue("watchdir");
 				if (p.IsOptionDefined("owncloudurl"))
@@ -220,7 +223,7 @@ namespace OwnCloudClient
 					return;
 				}
 
-				if (Settings.DownloadOnly)
+				if (Settings.DownloadAll)
 				{
 					//OwnCloudClient.DownloadAll("vccdrom~");
 					ConsoleColor currentColor = Console.ForegroundColor;
@@ -245,13 +248,15 @@ namespace OwnCloudClient
 
 				//outdated checks only need to run at the beginning since we are checking with lastSweep
 				//NOTE: if used with multiple users on the same cloud account this becomes problematic
-				int updatedRemoteFiles = FileProcessingHelpers.ProcessOutDatedRemoteFiles(localFiles, remoteFiles, !Settings.NoConfirmUpload);
+				int updatedRemoteFiles = FileHelpers.ReplaceOutDatedRemoteFiles(localFiles, remoteFiles, !Settings.NoConfirmUpload);
 				if (updatedRemoteFiles > 0)
 				{
 					NLogger.Current.Trace("Refreshing remotes");
 					remoteFiles = OwnCloudClient.GetRemoteFileList(); //refresh
 				}
-				FileProcessingHelpers.ProcessOutDatedLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmDownload);
+
+				if (!Settings.UploadOnly)
+					FileHelpers.ReplaceOutDatedLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmDownload);
 
 				DateTime lastSweep = DateTime.Now;
 				while (true)
@@ -259,8 +264,11 @@ namespace OwnCloudClient
 					NLogger.Current.Trace("Refreshing locals");
 					localFiles = OwnCloudClient.GetLocalFileList();
 
-					int uploadCount = FileProcessingHelpers.ProcessNewLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmUpload, lastSweep);
-					int deleteCount = FileProcessingHelpers.ProcessDeleteRemoteFiles(localFiles, remoteFiles, !Settings.NoConfirmDelete);
+					int uploadCount = FileHelpers.UploadNewLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmUpload, lastSweep);
+
+					int deleteCount = 0;
+					if (!Settings.UploadOnly)
+						 deleteCount = FileHelpers.DeleteRemoteFiles(localFiles, remoteFiles, !Settings.NoConfirmDelete);
 
 					if (Settings.RunOnce)
 						return; //bail out of program

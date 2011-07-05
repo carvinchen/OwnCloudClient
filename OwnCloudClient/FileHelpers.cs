@@ -5,7 +5,7 @@ using System.Text;
 
 namespace OwnCloudClient
 {
-	public static class FileProcessingHelpers
+	public static class FileHelpers
 	{
 		private enum ConfirmAnswer { Confirm, Skip, ConfirmAll, SkipAll };
 		private enum ConfirmRequest { Download, Upload, Delete };
@@ -66,7 +66,7 @@ namespace OwnCloudClient
 		}
 
 		//files that have older versions in the cloud -- upload the new ones and delete the old outdated cloud files
-		public static int ProcessOutDatedRemoteFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool confirmUpload)
+		public static int ReplaceOutDatedRemoteFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool confirmUpload)
 		{
 			var remoteQuery = (from l in localFiles
 							   join r in remoteFiles on l.CloudName equals r.CloudName
@@ -116,7 +116,7 @@ namespace OwnCloudClient
 		}
 
 		//files that have a newer version in the cloud -- download them and replace local files
-		public static int ProcessOutDatedLocalFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool confirmDownload)
+		public static int ReplaceOutDatedLocalFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool confirmDownload)
 		{
 			var localQuery = from l in localFiles
 							 join r in remoteFiles on l.FileName equals r.FileName
@@ -144,7 +144,7 @@ namespace OwnCloudClient
 
 		//files that exist on disk and not in the cloud -- assume new file and upload
 		//files that exist on disk and the lastmodified date is greater than our last sweep -- assume locally modified and upload
-		public static int ProcessNewLocalFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool askUpload, DateTime lastSweep)
+		public static int UploadNewLocalFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool askUpload, DateTime lastSweep)
 		{
 			var toUpload = localFiles.Where(x => !remoteFiles.Select(y => y.CloudName).Contains(x.CloudName) || x.LastModified > lastSweep).ToList();
 
@@ -173,7 +173,7 @@ namespace OwnCloudClient
 		}
 
 		//files that exist in the cloud but not on disk -- assume they were deleted
-		public static int ProcessDeleteRemoteFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool confirmDelete)
+		public static int DeleteRemoteFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool confirmDelete)
 		{
 			var toDelete = remoteFiles.Where(x => !localFiles.Select(y => y.CloudName).Contains(x.CloudName)).ToList();
 			if (toDelete.Count > 0)

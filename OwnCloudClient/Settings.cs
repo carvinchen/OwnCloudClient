@@ -136,24 +136,44 @@ namespace OwnCloudClient
 			}
 		} private static bool? _runOnce = null;
 
-		public static bool DownloadOnly
+		public static bool DownloadAll
 		{
 			get
 			{
-				if (_downloadOnly.HasValue)
-					return _downloadOnly.Value;
-				if (ConfigurationManager.AppSettings.AllKeys.Contains("DownloadOnly"))
-					return ConfigurationManager.AppSettings["DownloadOnly"].ToString() == "true";
+				if (_downloadAll.HasValue)
+					return _downloadAll.Value;
+				if (ConfigurationManager.AppSettings.AllKeys.Contains("DownloadAll"))
+					return ConfigurationManager.AppSettings["DownloadAll"].ToString() == "true";
 				return false;
 			}
 			set
 			{
-				if (!_downloadOnly.HasValue)
-					_downloadOnly = value;
+				if (!_downloadAll.HasValue)
+					_downloadAll = value;
 				else
-					throw new Exception("DownloadOnly was specified more than once");
+					throw new Exception("DownloadAll was specified more than once");
 			}
-		} private static bool? _downloadOnly = null;
+		} private static bool? _downloadAll = null;
+
+		public static bool UploadOnly
+		{
+			get
+			{
+				if (_uploadOnly.HasValue)
+					return _uploadOnly.Value;
+				if (ConfigurationManager.AppSettings.AllKeys.Contains("UploadOnly"))
+					return ConfigurationManager.AppSettings["UploadOnly"].ToString() == "true";
+				return false;
+			}
+			set
+			{
+				if (!_uploadOnly.HasValue)
+					_uploadOnly = value;
+				else
+					throw new Exception("UploadOnly was specified more than once");
+			}
+		} private static bool? _uploadOnly = null;
+
 
 		public static int SleepSeconds
 		{
