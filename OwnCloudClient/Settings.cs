@@ -44,7 +44,7 @@ namespace OwnCloudClient
 
 		private static string GetString(string SettingName, string val)
 		{
-			if (!string.IsNullOrEmpty(_password))
+			if (!string.IsNullOrEmpty(val))
 				return val;
 			if (ConfigurationManager.AppSettings.AllKeys.Contains(SettingName))
 				return ConfigurationManager.AppSettings[SettingName].ToString();
