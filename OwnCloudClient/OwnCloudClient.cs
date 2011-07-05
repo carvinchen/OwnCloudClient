@@ -354,7 +354,7 @@ namespace OwnCloudClient
 			using (WebClient wc = new WebClient())
 			{
 				NLogger.Current.Info(string.Format("Deleting {0}", cloudFileName));
-				string data3 = string.Format("action=delete&dir=&file={0}", cloudFileName);
+				string data3 = string.Format("action=delete&dir=&file={0}", EncryptFileName(cloudFileName));
 				wc.Headers.Add("Pragma: no-cache");
 				wc.Headers.Add("Content-Type: application/x-www-form-urlencoded");
 				wc.Headers.Add(string.Format("Cookie: PHPSESSID={0}", phpId));
