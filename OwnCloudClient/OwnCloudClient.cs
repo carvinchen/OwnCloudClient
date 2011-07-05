@@ -57,7 +57,7 @@ namespace OwnCloudClient
 					CloudName = cloudName, 
 					LastModified = modified, 
 					CloudNamePlusDate = cloudNamePlusDate, 
-					FileName = encryptedCloudFileNamePlusDate,
+					FileName = localFileName,
 					EncryptedCloudNamePlusDate = EncryptFileName(cloudNamePlusDate)
 				};
 			return null;
