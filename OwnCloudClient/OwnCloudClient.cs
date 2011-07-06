@@ -260,7 +260,7 @@ namespace OwnCloudClient
 		{
 			IOrderedEnumerable<FileInfoX> files = GetRemoteFileList().OrderBy(x => x.CloudFileName);
 			foreach (var f in files)
-				NLogger.Current.Info(f.LocalFileName);
+				Console.WriteLine(f.LocalFileName);
 		}
 
 		public static UploadFileStatus UploadFile(string localFullPath)
