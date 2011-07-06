@@ -12,5 +12,6 @@ namespace cb.Options
 		public bool IsDefined { get; set; }
 		public string LongName { get; set; }
 		public string StringValue { get; set; }
+		public char ShortName { get; set; }
 	}
 }

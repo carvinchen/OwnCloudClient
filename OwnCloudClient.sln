@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OwnCloudClient", "OwnCloudC
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cb.Options", "cb.Options\cb.Options.csproj", "{CBD1904B-A00A-4789-98FF-D63C11386935}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cb.Options.Tests", "cb.Options.Tests\cb.Options.Tests.csproj", "{1BDF1BC5-74C7-4CBE-9020-BD596A5DB95E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,16 @@ Global
 		{CBD1904B-A00A-4789-98FF-D63C11386935}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{CBD1904B-A00A-4789-98FF-D63C11386935}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{CBD1904B-A00A-4789-98FF-D63C11386935}.Release|x86.ActiveCfg = Release|Any CPU
+		{1BDF1BC5-74C7-4CBE-9020-BD596A5DB95E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BDF1BC5-74C7-4CBE-9020-BD596A5DB95E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BDF1BC5-74C7-4CBE-9020-BD596A5DB95E}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{1BDF1BC5-74C7-4CBE-9020-BD596A5DB95E}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{1BDF1BC5-74C7-4CBE-9020-BD596A5DB95E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1BDF1BC5-74C7-4CBE-9020-BD596A5DB95E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BDF1BC5-74C7-4CBE-9020-BD596A5DB95E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BDF1BC5-74C7-4CBE-9020-BD596A5DB95E}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{1BDF1BC5-74C7-4CBE-9020-BD596A5DB95E}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{1BDF1BC5-74C7-4CBE-9020-BD596A5DB95E}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

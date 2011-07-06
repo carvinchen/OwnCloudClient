@@ -10,5 +10,6 @@ namespace cb.Options
 		public bool IsRequired { get; set; }
 		public bool IsFlag { get; set; }
 		public string LongName { get; set; }
+		public char ShortName { get; set; }
 	}
 }

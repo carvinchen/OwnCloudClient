@@ -138,16 +138,16 @@ namespace OwnCloudClient
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "noconfirmdownload", IsFlag = true });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "noconfirmupload", IsFlag = true });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "noconfirmdelete", IsFlag = true });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "runonce", IsFlag = true });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "runonce", IsFlag = true, ShortName = '1' });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "downloadall", IsFlag = true });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "uploadonly", IsFlag = true });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "sleepseconds" });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "sleepseconds", ShortName = 's'});
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "watchdir" });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "owncloudurl" });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "help", IsFlag = true });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "version", IsFlag = true });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "help", IsFlag = true, ShortName = 'h' });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "version", IsFlag = true, ShortName = 'v' });
 				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "downloadallprefix"});
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "listremotefiles", IsFlag = true });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "listremotefiles", IsFlag = true, ShortName = 'l'});
 
 				p.Parse(args);
 
