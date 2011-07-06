@@ -7,75 +7,70 @@ namespace cb.Options
 {
 	public class Parser
 	{
-		private Dictionary<string, OptionDefinition> _longOptionDefinitions = new Dictionary<string, OptionDefinition>();
-		private Dictionary<string, Option> _longOptions = new Dictionary<string, Option>();
+		//private Dictionary<string, OptionDefinition> _optionDefinitions = new Dictionary<string, OptionDefinition>();
+		//private Dictionary<string, Option> _options = new Dictionary<string, Option>();
 
-		private Dictionary<char, OptionDefinition> _shortOptionDefinitions = new Dictionary<char, OptionDefinition>();
-		private Dictionary<char, Option> _shortOptions = new Dictionary<char, Option>();
+		private List<OptionDefinition> _optionDefinitions = new List<OptionDefinition>();
+		private List<Option> _options = new List<Option>();
 
 		private void HandleSingleCharOptionString(string s)
 		{
-			if (s.Length == 2 && !_shortOptionDefinitions.ContainsKey(s[1]))
-				throw new Exception("Unknown option " + s[1].ToString());
+			if (s.Length < 2)
+				throw new Exception("Too Short");
+
+			OptionDefinition od = _optionDefinitions.Where(d => d.ShortName == s[1]).FirstOrDefault();
+
+			if (od == null)
+				throw new Exception("Unknown option " + od.ShortName.ToString());
 
 			if (s.IndexOf('=') != 2)
 				throw new Exception("Single letter flag arguments cannot be combined with string args.");
 
-			if (!_shortOptionDefinitions.ContainsKey(s[1]))
-				throw new Exception("Unknown option " + s[1].ToString());
+			Option o = new Option() { ShortName = od.ShortName, IsDefined = true, LongName = od.LongName};
 
-			Option o = new Option() { ShortName = s[1], IsDefined = true };
-
-			if (!_shortOptionDefinitions[s[1]].IsFlag)
+			if (!od.IsFlag)
 				o.StringValue = s.Substring(s.LastIndexOf('=') + 1);
 
-			_shortOptions.Add(s[1], o);
+			_options.Add(o);
 		}
 
 		private void HandleMultipleCharFlagOptions(string s)
 		{
 			for (int i = 1; i < s.Length; i++)
-			{
-				if (!_shortOptionDefinitions.ContainsKey(s[i]))
-					throw new Exception("Unknown option " + s[i].ToString());
-
-				if (!_shortOptionDefinitions[s[i]].IsFlag)
-					throw new Exception("Attempting to use " + s[i].ToString() + " as a flag, but it is not a flag");
-
-				if (_shortOptionDefinitions.Keys.Contains<char>(s[i]))
-					_shortOptions.Add(s[i], new Option() { IsDefined = true, IsFlag = true });
-			}
+				HandleSingleCharFlagOption(s[i]);
 		}
 
-		private void HandleSingleCharFlagOption(string s)
+		private void HandleSingleCharFlagOption(char c)
 		{
-			if (!_shortOptionDefinitions.ContainsKey(s[1]))
-				throw new Exception("Unknown option " + s[1].ToString());
+			OptionDefinition od = _optionDefinitions.Where(d => d.ShortName == c).FirstOrDefault();
+			if (od == null)
+				throw new Exception("Unknown option " + c.ToString());
 
-			if (s.Length == 2 && !_shortOptionDefinitions[s[1]].IsFlag)
-				throw new Exception("Attempting to use " + s[1].ToString() + " as a flag, but it is not a flag");
+			if (!od.IsFlag)
+				throw new Exception("Attempting to use " + c.ToString() + " as a flag, but it is not a flag");
 
-			if (s.Length == 2 && _shortOptionDefinitions.Keys.Contains<char>(s[1]))
-				_shortOptions.Add(s[1], new Option() { IsDefined = true, IsFlag = true });
+			_options.Add(new Option() { IsDefined = true, IsFlag = true, LongName = od.LongName, ShortName = od.ShortName });
 		}
 
-		private void HandleLongOption(string s)
+		private void HandleLongOption(string longOption)
 		{
-			string name = s.Substring(2, s.Length - 2);
+			string argName = longOption.TrimStart(new char[] { '-' });
 
-			if (s.Contains('='))
-				name = name.Substring(0, name.LastIndexOf('='));
+			if (longOption.Contains('='))
+				argName = argName.Substring(0, argName.LastIndexOf('='));
+			
+			OptionDefinition od = _optionDefinitions.Where(d => d.LongName == argName).FirstOrDefault();
 
-			if (string.IsNullOrEmpty(name) || !_longOptionDefinitions.ContainsKey(name))
-				throw new Exception("Unknown option " + name);
+			if (od == null)
+				throw new Exception("Unknown option " + argName);
 
-			Option o = new Option() { LongName = name, IsDefined = true };
+			Option o = new Option() { LongName = argName, IsDefined = true };
 
-			if (!_longOptionDefinitions[name].IsFlag && s.Contains('='))
-				o.StringValue = s.Substring(s.LastIndexOf('=') + 1);
+			if (!od.IsFlag && longOption.Contains('='))
+				o.StringValue = longOption.Substring(longOption.LastIndexOf('=') + 1);
 
-			if (!_longOptions.ContainsKey(o.LongName))
-				_longOptions.Add(o.LongName, o);
+			if (_options.Count(x => x.LongName == argName) == 0)
+				_options.Add(o);
 		}
 
 		public bool IsOptionDefined(string name)
@@ -83,17 +78,7 @@ namespace cb.Options
 			if (string.IsNullOrEmpty(name))
 				return false;
 
-			if (_longOptionDefinitions.ContainsKey(name))
-			{
-				Option o = null;
-				if (_longOptions.ContainsKey(name))
-					o = _longOptions[name];
-
-				return (o != null && o.IsDefined) ||
-					(_shortOptions.ContainsKey(_longOptionDefinitions[name].ShortName)
-							&& _shortOptions[_longOptionDefinitions[name].ShortName].IsDefined);
-			}
-			return false;
+			return _options.Where(o => o.LongName == name).Count() == 1;
 		}
 
 		public string GetOptionStringValue(string name)
@@ -101,36 +86,20 @@ namespace cb.Options
 			if (string.IsNullOrEmpty(name))
 				return string.Empty;
 
-			if (!_longOptionDefinitions.ContainsKey(name))
-				return string.Empty;
-
-			if (_longOptions.ContainsKey(name) && _longOptions[name].IsFlag)
-				return string.Empty;
-
-			if (_shortOptions.ContainsKey(_longOptionDefinitions[name].ShortName) && _shortOptions[_longOptionDefinitions[name].ShortName].IsFlag)
-				return string.Empty;
-
-			if (_longOptions.ContainsKey(name))
-				return _longOptions[name].StringValue;
-
-			if (_shortOptions.ContainsKey(_longOptionDefinitions[name].ShortName))
-				return _shortOptions[_longOptionDefinitions[name].ShortName].StringValue;
-
-			return string.Empty;
+			return _options.Where(o => o.LongName == name)
+							.Select(o => o.StringValue)
+							.FirstOrDefault();
 		}
 		
 		public void AddDefinition(OptionDefinition od)
 		{
 			if (string.IsNullOrEmpty(od.LongName))
 				throw new Exception("LongName is a required field");
-			
-			//add to long index
-			if (!_longOptionDefinitions.ContainsKey(od.LongName))
-				_longOptionDefinitions.Add(od.LongName, od);
 
-			//add to short index
-			if (!_shortOptionDefinitions.ContainsKey(od.ShortName))
-				_shortOptionDefinitions.Add(od.ShortName, od);
+			if (_optionDefinitions.Where(o => o.LongName == od.LongName).Count() > 0)
+				throw new Exception(od.LongName + " is already defined");
+
+			_optionDefinitions.Add(od);
 		}
 
 		public void Parse(string[] args)
@@ -148,7 +117,7 @@ namespace cb.Options
 				{
 					if (s.Length == 2)
 					{
-						HandleSingleCharFlagOption(s);
+						HandleSingleCharFlagOption(s[1]);
 					}
 					else if (s.Length > 2)
 					{
@@ -164,12 +133,24 @@ namespace cb.Options
 				}
 			}
 
-			//_longOptionDefinitions is a complete list since longName is a required field
-			var required = _longOptionDefinitions.Where(x => x.Value.IsRequired == true);
-			var undefined = required.Where(y => !_longOptions.ContainsKey(y.Value.LongName) && !_shortOptions.ContainsKey(y.Value.ShortName)).ToList();
+			var required = _optionDefinitions.Where(od => od.IsRequired == true);
+			var undefinedRequired = (from r in required
+							 join o in _options on r.LongName equals o.LongName into joinedTable
+							 from j in joinedTable.DefaultIfEmpty()
+							 where j == null //get all optiondefinitions that are required that don't match a supplied user option
+							 select r.LongName).ToList();
 
-			if (undefined.Count > 0)
-				throw new Exception(string.Format("{0} is a required option", undefined[0].Value.LongName));
+			//var LeftJoin = from emp in ListOfEmployees
+			//               join dept in ListOfDepartment on emp.DeptID equals dept.ID into JoinedEmpDept
+			//               from dept in JoinedEmpDept.DefaultIfEmpty()
+			//               select new
+			//               {
+			//                   EmployeeName = emp.Name,
+			//                   DepartmentName = dept != null ? dept.Name : null
+			//               };
+
+			if (undefinedRequired.Count > 0)
+				throw new Exception(string.Format("{0} is a required option", undefinedRequired[0]));
 		}
 
 	}
