@@ -62,19 +62,21 @@ namespace OwnCloudClient
 
 		private static void DisplaySampleUseage()
 		{
-			Console.WriteLine("Note: Unless downloadonly or runonce flags are set, program will continue to monitor changes");
+			Console.WriteLine("Note: Unless " + Settings.Constants.DownloadAll + " or " 
+				+ Settings.Constants.RunOnce + " flags are set, program will continue to monitor changes");
+
 			Console.WriteLine();
-			Console.WriteLine("--noconfirmdownload\t[flag] Don't ask about downloading files to local disk");
-			Console.WriteLine("--noconfirmupload\t[flag] Don't ask about uploading files to OwnCloud");
-			Console.WriteLine("--noconfirmdelete\t[flag] Don't ask about deleting remote files");
-			Console.WriteLine("--runonce\t\t[flag] Run all checks once and then exit - otherwise sleep for [sleepseconds] and run again");
-			Console.WriteLine("--downloadonly\t\t[flag] Download all changed/new files hosted in OwnCloud and exit");
-			Console.WriteLine("--sleepseconds\t\tNumber of seconds to wait before checking for changes (default = 10)");
-			Console.WriteLine("--watchdir\t\tThe directory (recursive) to watch for changes (default currentDir\\data\\)");
-			Console.WriteLine("--owncloudurl\t\tThe URL to your OwnCloud instance");
-			Console.WriteLine("--downloadallprefix\t\tDownload everything that starts with this");
-			Console.WriteLine("--version\t\tDisplay version informatoon");
-			Console.WriteLine("--help\t\t\tDisplay this screen");    
+			Console.WriteLine("--" + Settings.Constants.NoConfirmDownload + "\t[flag] Don't ask about downloading files to local disk");
+			Console.WriteLine("--" + Settings.Constants.NoConfirmUpload + "\t[flag] Don't ask about uploading files to OwnCloud");
+			Console.WriteLine("--" + Settings.Constants.NoConfirmDelete + "\t[flag] Don't ask about deleting remote files");
+			Console.WriteLine("--" + Settings.Constants.RunOnce + "\t\t[flag] Run all checks once and then exit - otherwise sleep for [sleepseconds] and run again");
+			Console.WriteLine("--" + Settings.Constants.DownloadAll + "\t\t[flag] Download all changed/new files hosted in OwnCloud and exit");
+			Console.WriteLine("--" + Settings.Constants.SleepSeconds + "\t\tNumber of seconds to wait before checking for changes (default = 10)");
+			Console.WriteLine("--" + Settings.Constants.WatchDir + "\t\tThe directory (recursive) to watch for changes (default currentDir\\data\\)");
+			Console.WriteLine("--" + Settings.Constants.OwnCloudUrl + "\t\tThe URL to your OwnCloud instance");
+			Console.WriteLine("--" + Settings.Constants.DownloadAllPrefix + "\tDownload everything that starts with this");
+			Console.WriteLine("--" + Settings.Constants.Version + "\t\tDisplay version information");
+			Console.WriteLine("--" + Settings.Constants.Help + "\t\t\tDisplay this screen");    
 		}
 
 		private static void DisplayCurrentSettings()
