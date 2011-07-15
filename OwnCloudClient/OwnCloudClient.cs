@@ -34,18 +34,6 @@ namespace OwnCloudClient
 			return new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(Convert.ToDouble(sUnixTime));
 		}
 
-		private static string EncryptFileName(string fileName)
-		{
-			byte[] bs = Encoding.ASCII.GetBytes(fileName);
-			return Convert.ToBase64String(Encryption.EncryptBytes(bs)).Replace('/', '-').Replace('+', '_');
-		}
-
-		private static string DecryptFileName(string encryptedFileName)
-		{
-			byte[] bs = Convert.FromBase64String(encryptedFileName.Replace('-', '/').Replace('_', '+'));
-			return Encoding.ASCII.GetString(Encryption.DecryptBytes(bs));
-		}
-
 		//!FileNameProcessing
 		private static FileInfoX CreateFileInfoXFromcloudFileNameWithEmbeddedData(string cloudFileNameWithEmbeddedData)
 		{
@@ -68,6 +56,19 @@ namespace OwnCloudClient
 				};
 			return null;
 		}
+
+		private static string EncryptFileName(string fileName)
+		{
+			byte[] bs = Encoding.ASCII.GetBytes(fileName);
+			return Convert.ToBase64String(Encryption.EncryptBytes(bs)).Replace('/', '-').Replace('+', '_');
+		}
+
+		private static string DecryptFileName(string encryptedFileName)
+		{
+			byte[] bs = Convert.FromBase64String(encryptedFileName.Replace('-', '/').Replace('_', '+'));
+			return Encoding.ASCII.GetString(Encryption.DecryptBytes(bs));
+		}
+
 
 		private static string GetPhpId()
 		{

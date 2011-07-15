@@ -7,9 +7,6 @@ namespace cb.Options
 {
 	public class Parser
 	{
-		//private Dictionary<string, OptionDefinition> _optionDefinitions = new Dictionary<string, OptionDefinition>();
-		//private Dictionary<string, Option> _options = new Dictionary<string, Option>();
-
 		private List<OptionDefinition> _optionDefinitions = new List<OptionDefinition>();
 		private List<Option> _options = new List<Option>();
 
@@ -59,7 +56,8 @@ namespace cb.Options
 			if (longOption.Contains('='))
 				argName = argName.Substring(0, argName.LastIndexOf('='));
 			
-			OptionDefinition od = _optionDefinitions.Where(d => d.LongName == argName).FirstOrDefault();
+			OptionDefinition od = _optionDefinitions.Where(d => string.Compare(d.LongName, argName, true) == 0)
+													.FirstOrDefault();
 
 			if (od == null)
 				throw new Exception("Unknown option " + argName);
@@ -69,7 +67,7 @@ namespace cb.Options
 			if (!od.IsFlag && longOption.Contains('='))
 				o.StringValue = longOption.Substring(longOption.LastIndexOf('=') + 1);
 
-			if (_options.Count(x => x.LongName == argName) == 0)
+			if (_options.Count(x => (string.Compare(x.LongName, argName, true) == 0)) == 0)
 				_options.Add(o);
 		}
 
@@ -78,7 +76,8 @@ namespace cb.Options
 			if (string.IsNullOrEmpty(name))
 				return false;
 
-			return _options.Where(o => o.LongName == name).Count() == 1;
+			return _options.Where(o => string.Compare(o.LongName, name, true) == 0)
+						   .Count() == 1;
 		}
 
 		public string GetOptionStringValue(string name)
@@ -86,7 +85,7 @@ namespace cb.Options
 			if (string.IsNullOrEmpty(name))
 				return string.Empty;
 
-			return _options.Where(o => o.LongName == name)
+			return _options.Where(o => string.Compare(o.LongName, name, true) == 0)
 							.Select(o => o.StringValue)
 							.FirstOrDefault();
 		}
@@ -96,7 +95,8 @@ namespace cb.Options
 			if (string.IsNullOrEmpty(od.LongName))
 				throw new Exception("LongName is a required field");
 
-			if (_optionDefinitions.Where(o => o.LongName == od.LongName).Count() > 0)
+			if (_optionDefinitions.Where(o => string.Compare(o.LongName, od.LongName, true) == 0)
+								  .Count() > 0)
 				throw new Exception(od.LongName + " is already defined");
 
 			_optionDefinitions.Add(od);
@@ -135,7 +135,7 @@ namespace cb.Options
 
 			var required = _optionDefinitions.Where(od => od.IsRequired == true);
 			var undefinedRequired = (from r in required
-							 join o in _options on r.LongName equals o.LongName into joinedTable
+							 join o in _options on r.LongName.ToLower() equals o.LongName.ToLower() into joinedTable
 							 from j in joinedTable.DefaultIfEmpty()
 							 where j == null //get all optiondefinitions that are required that don't match a supplied user option
 							 select r.LongName).ToList();

@@ -8,6 +8,23 @@ namespace OwnCloudClient
 {
 	public static class Settings
 	{
+		public static class Constants
+		{
+			public const string NoConfirmDownload = "NoConfirmDownload";
+			public const string NoConfirmUpload = "NoConfirmUpload";
+			public const string NoConfirmDelete = "NoConfirmDelete";
+			public const string RunOnce = "RunOnce";
+			public const string DownloadAll = "DownloadAll";
+			public const string UploadOnly = "UploadOnly";
+			public const string SleepSeconds = "SleepSeconds";
+			public const string WatchDir = "WatchDir";
+			public const string OwnCloudUrl = "OwnCloudUrl";
+			public const string Help = "Help";
+			public const string Version = "Version";
+			public const string DownloadAllPrefix = "DownloadAllPrefix";
+			public const string ListRemoteFiles = "ListRemoteFiles";
+		}
+
 		private static bool GetBool(string SettingName, bool? val)
 		{
 			if (val.HasValue)
@@ -73,7 +90,7 @@ namespace OwnCloudClient
 		{
 			get
 			{
-				string retVal = GetString("WatchDir", _watchDir);
+				string retVal = GetString(Constants.WatchDir, _watchDir);
 				if (string.IsNullOrEmpty(retVal))
 					retVal = Environment.CurrentDirectory + System.IO.Path.DirectorySeparatorChar.ToString() + "data" + System.IO.Path.DirectorySeparatorChar.ToString();
 
@@ -84,7 +101,7 @@ namespace OwnCloudClient
 			}
 			set
 			{
-				SetString("WatchDir", ref _watchDir, value);
+				SetString(Constants.WatchDir, ref _watchDir, value);
 			}
 		} private static string _watchDir = null;
 
@@ -92,7 +109,7 @@ namespace OwnCloudClient
 		{
 			get
 			{
-				string retVal = GetString("OwnCloudUrl", _ownCloudUrl);
+				string retVal = GetString(Constants.OwnCloudUrl, _ownCloudUrl);
 				if (string.IsNullOrEmpty(retVal))
 					throw new Exception("Cannot find OwnCloud Url");
 
@@ -103,62 +120,62 @@ namespace OwnCloudClient
 			}
 			set
 			{
-				SetString("OwnCloudUrl", ref _ownCloudUrl, value);
+				SetString(Constants.OwnCloudUrl, ref _ownCloudUrl, value);
 			}
 		} private static string _ownCloudUrl = null;
 
 		public static bool NoConfirmDownload
 		{
-			get { return GetBool("NoConfirmDownload", _noConfirmDownload); }
-			set { SetBool("NoConfirmDownload", ref _noConfirmDownload, value); }
+			get { return GetBool(Constants.NoConfirmDownload, _noConfirmDownload); }
+			set { SetBool(Constants.NoConfirmDownload, ref _noConfirmDownload, value); }
 		} private static bool? _noConfirmDownload = null;
 
 		public static bool NoConfirmDelete
 		{
-			get { return GetBool("NoConfirmDelete", _noConfirmDelete); }
-			set { SetBool("NoConfirmDelete", ref _noConfirmDelete, value); }
+			get { return GetBool(Constants.NoConfirmDelete, _noConfirmDelete); }
+			set { SetBool(Constants.NoConfirmDelete, ref _noConfirmDelete, value); }
 		} private static bool? _noConfirmDelete = null;
 
 		public static bool NoConfirmUpload
 		{
-			get { return GetBool("NoConfirmUpload", _noConfirmUpload); }
-			set { SetBool("NoConfirmUpload", ref _noConfirmUpload, value); }
+			get { return GetBool(Constants.NoConfirmUpload, _noConfirmUpload); }
+			set { SetBool(Constants.NoConfirmUpload, ref _noConfirmUpload, value); }
 		} private static bool? _noConfirmUpload = null;
 
 		public static bool RunOnce
 		{
-			get { return GetBool("RunOnce", _runOnce); }
-			set { SetBool("RunOnce", ref _runOnce, value); }
+			get { return GetBool(Constants.RunOnce, _runOnce); }
+			set { SetBool(Constants.RunOnce, ref _runOnce, value); }
 		} private static bool? _runOnce = null;
 
 		public static bool DownloadAll
 		{
-			get { return GetBool("DownloadAll", _downloadAll); }
-			set { SetBool("DownloadAll", ref _downloadAll, value); }
+			get { return GetBool(Constants.DownloadAll, _downloadAll); }
+			set { SetBool(Constants.DownloadAll, ref _downloadAll, value); }
 		} private static bool? _downloadAll = null;
 
 		public static string DownloadAllPrefix
 		{
-			get { return GetString("DownloadAllPrefix", _downloadAllPrefix); }
-			set { SetString("DownloadAllPrefix", ref _downloadAllPrefix, value); }
+			get { return GetString(Constants.DownloadAllPrefix, _downloadAllPrefix); }
+			set { SetString(Constants.DownloadAllPrefix, ref _downloadAllPrefix, value); }
 		} private static string _downloadAllPrefix = null;
 
 		public static bool UploadOnly
 		{
-			get { return GetBool("UploadOnly", _uploadOnly); }
-			set { SetBool("UploadOnly", ref _uploadOnly, value); }
+			get { return GetBool(Constants.UploadOnly, _uploadOnly); }
+			set { SetBool(Constants.UploadOnly, ref _uploadOnly, value); }
 		} private static bool? _uploadOnly = null;
 
 		public static bool ListRemoteFiles
 		{
-			get { return GetBool("ListRemoteFiles", _listRemoteFiles); }
-			set { SetBool("ListRemoteFiles", ref _listRemoteFiles, value); }
+			get { return GetBool(Constants.ListRemoteFiles, _listRemoteFiles); }
+			set { SetBool(Constants.ListRemoteFiles, ref _listRemoteFiles, value); }
 		} private static bool? _listRemoteFiles = null;
 
 		public static int SleepSeconds
 		{
-			get { return GetInt("SleepSeconds", _sleepSeconds, 10); }
-			set { SetInt("SleepSeconds", ref _sleepSeconds, value); }
+			get { return GetInt(Constants.SleepSeconds, _sleepSeconds, 10); }
+			set { SetInt(Constants.SleepSeconds, ref _sleepSeconds, value); }
 		} private static int? _sleepSeconds = null;
 
 		public static string Password
@@ -195,6 +212,6 @@ namespace OwnCloudClient
 					throw new Exception("Cannot find EncryptionKey in config file");
 			}
 		}
-		
+
 	}
 }

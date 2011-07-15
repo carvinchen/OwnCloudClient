@@ -80,16 +80,16 @@ namespace OwnCloudClient
 		private static void DisplayCurrentSettings()
 		{
 			NLogger.Current.Debug("Options: ");
-			NLogger.Current.Debug("confirmdownload: " + !Settings.NoConfirmDownload);
-			NLogger.Current.Debug("confirmupload: " + !Settings.NoConfirmUpload);
-			NLogger.Current.Debug("confirmdelete: " + !Settings.NoConfirmDelete);
-			NLogger.Current.Debug("runonce: " + Settings.RunOnce);
-			NLogger.Current.Debug("downloadall: " + Settings.DownloadAll);
-			NLogger.Current.Debug("sleepSeconds: " + Settings.SleepSeconds);
-			NLogger.Current.Debug("watchdir: " + Settings.WatchDir);
-			NLogger.Current.Debug("listremotefiles: " + Settings.ListRemoteFiles);
-			NLogger.Current.Debug("downloadallprefix: " + Settings.DownloadAllPrefix);
-			NLogger.Current.Debug("owncloudurl: " + Settings.OwnCloudUrl);
+			NLogger.Current.Debug(Settings.Constants.NoConfirmDownload + ": " + !Settings.NoConfirmDownload);
+			NLogger.Current.Debug(Settings.Constants.NoConfirmUpload + ": " + !Settings.NoConfirmUpload);
+			NLogger.Current.Debug(Settings.Constants.NoConfirmDelete + ": " + !Settings.NoConfirmDelete);
+			NLogger.Current.Debug(Settings.Constants.RunOnce + ": " + Settings.RunOnce);
+			NLogger.Current.Debug(Settings.Constants.DownloadAll + ": " + Settings.DownloadAll);
+			NLogger.Current.Debug(Settings.Constants.SleepSeconds + ": " + Settings.SleepSeconds);
+			NLogger.Current.Debug(Settings.Constants.WatchDir + ": " + Settings.WatchDir);
+			NLogger.Current.Debug(Settings.Constants.ListRemoteFiles + ": " + Settings.ListRemoteFiles);
+			NLogger.Current.Debug(Settings.Constants.DownloadAllPrefix + ": " + Settings.DownloadAllPrefix);
+			NLogger.Current.Debug(Settings.Constants.OwnCloudUrl + ": " + Settings.OwnCloudUrl);
 		}
 		
 		private static DateTime RetrieveLinkerTimestamp()
@@ -135,50 +135,50 @@ namespace OwnCloudClient
 			cb.Options.Parser p = new cb.Options.Parser();
 			try
 			{
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "noconfirmdownload", IsFlag = true });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "noconfirmupload", IsFlag = true });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "noconfirmdelete", IsFlag = true });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "runonce", IsFlag = true, ShortName = '1' });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "downloadall", IsFlag = true });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "uploadonly", IsFlag = true });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "sleepseconds", ShortName = 's'});
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "watchdir" });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "owncloudurl" });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "help", IsFlag = true, ShortName = 'h' });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "version", IsFlag = true, ShortName = 'v' });
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "downloadallprefix"});
-				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = "listremotefiles", IsFlag = true, ShortName = 'l'});
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.NoConfirmDownload, IsFlag = true });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.NoConfirmUpload, IsFlag = true });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.NoConfirmDelete, IsFlag = true });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.RunOnce, IsFlag = true, ShortName = '1' });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.DownloadAll, IsFlag = true });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.UploadOnly, IsFlag = true });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.SleepSeconds, ShortName = 's'});
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.WatchDir });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.OwnCloudUrl });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.Help, IsFlag = true, ShortName = 'h' });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.Version, IsFlag = true, ShortName = 'v' });
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.DownloadAllPrefix});
+				p.AddDefinition(new cb.Options.OptionDefinition() { LongName = Settings.Constants.ListRemoteFiles, IsFlag = true, ShortName = 'l'});
 
 				p.Parse(args);
 
-				if (p.IsOptionDefined("help"))
+				if (p.IsOptionDefined(Settings.Constants.Help))
 				{
 					DisplaySampleUseage();
 					return false;
 				}
 
-				if (p.IsOptionDefined("version"))
+				if (p.IsOptionDefined(Settings.Constants.Version))
 				{
 					DisplayVersionInfo();
 					return false;
 				}
 
-				Settings.NoConfirmDownload = p.IsOptionDefined("noconfirmdownload");
-				Settings.NoConfirmUpload = p.IsOptionDefined("noconfirmupload");
-				Settings.NoConfirmDelete = p.IsOptionDefined("noconfirmdelete");
-				Settings.RunOnce = p.IsOptionDefined("runonce");
-				Settings.DownloadAll = p.IsOptionDefined("downloadall");
-				Settings.UploadOnly = p.IsOptionDefined("uploadonly");
-				Settings.ListRemoteFiles = p.IsOptionDefined("listremotefiles");
+				Settings.NoConfirmDownload = p.IsOptionDefined(Settings.Constants.NoConfirmDownload);
+				Settings.NoConfirmUpload = p.IsOptionDefined(Settings.Constants.NoConfirmUpload);
+				Settings.NoConfirmDelete = p.IsOptionDefined(Settings.Constants.NoConfirmDelete);
+				Settings.RunOnce = p.IsOptionDefined(Settings.Constants.RunOnce);
+				Settings.DownloadAll = p.IsOptionDefined(Settings.Constants.DownloadAll);
+				Settings.UploadOnly = p.IsOptionDefined(Settings.Constants.UploadOnly);
+				Settings.ListRemoteFiles = p.IsOptionDefined(Settings.Constants.ListRemoteFiles);
 
-				if (p.IsOptionDefined("watchdir"))
-					Settings.WatchDir = p.GetOptionStringValue("watchdir");
-				if (p.IsOptionDefined("owncloudurl"))
-					Settings.OwnCloudUrl = p.GetOptionStringValue("owncloudurl");
-				if (p.IsOptionDefined("sleepseconds"))
-					Settings.SleepSeconds = Convert.ToInt32(p.GetOptionStringValue("sleepseconds"));
-				if (p.IsOptionDefined("downloadallprefix"))
-					Settings.DownloadAllPrefix = p.GetOptionStringValue("downloadallprefix");
+				if (p.IsOptionDefined(Settings.Constants.WatchDir))
+					Settings.WatchDir = p.GetOptionStringValue(Settings.Constants.WatchDir);
+				if (p.IsOptionDefined(Settings.Constants.OwnCloudUrl))
+					Settings.OwnCloudUrl = p.GetOptionStringValue(Settings.Constants.OwnCloudUrl);
+				if (p.IsOptionDefined(Settings.Constants.SleepSeconds))
+					Settings.SleepSeconds = Convert.ToInt32(p.GetOptionStringValue(Settings.Constants.SleepSeconds));
+				if (p.IsOptionDefined(Settings.Constants.DownloadAllPrefix))
+					Settings.DownloadAllPrefix = p.GetOptionStringValue(Settings.Constants.DownloadAllPrefix);
 
 				if (string.IsNullOrEmpty(Settings.UserName))
 				{
