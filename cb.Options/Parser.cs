@@ -8,27 +8,25 @@ namespace cb.Options
 	public class Parser
 	{
 		private List<OptionDefinition> _optionDefinitions = new List<OptionDefinition>();
-		private List<Option> _options = new List<Option>();
+		private List<Option> _options = null;
 
 		private void HandleSingleCharOptionString(string s)
 		{
 			if (s.Length < 2)
 				throw new Exception("Too Short");
 
-			OptionDefinition od = _optionDefinitions.Where(d => d.ShortName == s[1]).FirstOrDefault();
+			Option o = _options.Where(d => d.ShortName == s[1]).FirstOrDefault();
 
-			if (od == null)
-				throw new Exception("Unknown option " + od.ShortName.ToString());
+			if (o == null)
+				throw new Exception("Unknown option " + s);
 
 			if (s.IndexOf('=') != 2)
 				throw new Exception("Single letter flag arguments cannot be combined with string args.");
 
-			Option o = new Option() { ShortName = od.ShortName, IsDefined = true, LongName = od.LongName};
+			o.IsDefined = true;
 
-			if (!od.IsFlag)
+			if (!o.IsFlag)
 				o.StringValue = s.Substring(s.LastIndexOf('=') + 1);
-
-			_options.Add(o);
 		}
 
 		private void HandleMultipleCharFlagOptions(string s)
@@ -39,14 +37,14 @@ namespace cb.Options
 
 		private void HandleSingleCharFlagOption(char c)
 		{
-			OptionDefinition od = _optionDefinitions.Where(d => d.ShortName == c).FirstOrDefault();
-			if (od == null)
+			Option op = _options.Where(o => o.ShortName == c).FirstOrDefault();
+			if (op == null)
 				throw new Exception("Unknown option " + c.ToString());
 
-			if (!od.IsFlag)
+			if (!op.IsFlag)
 				throw new Exception("Attempting to use " + c.ToString() + " as a flag, but it is not a flag");
 
-			_options.Add(new Option() { IsDefined = true, IsFlag = true, LongName = od.LongName, ShortName = od.ShortName });
+			op.IsDefined = true;
 		}
 
 		private void HandleLongOption(string longOption)
@@ -56,27 +54,59 @@ namespace cb.Options
 			if (longOption.Contains('='))
 				argName = argName.Substring(0, argName.LastIndexOf('='));
 			
-			OptionDefinition od = _optionDefinitions.Where(d => string.Compare(d.LongName, argName, true) == 0)
-													.FirstOrDefault();
+			Option op = _options.Where(o => string.Compare(o.LongName, argName, true) == 0)
+								.FirstOrDefault();
 
-			if (od == null)
+			if (op == null)
 				throw new Exception("Unknown option " + argName);
 
-			Option o = new Option() { LongName = argName, IsDefined = true };
+			op.IsDefined = true;
 
-			if (!od.IsFlag && longOption.Contains('='))
-				o.StringValue = longOption.Substring(longOption.LastIndexOf('=') + 1);
-
-			if (_options.Count(x => (string.Compare(x.LongName, argName, true) == 0)) == 0)
-				_options.Add(o);
+			if (!op.IsFlag && longOption.Contains('='))
+				op.StringValue = longOption.Substring(longOption.LastIndexOf('=') + 1);
 		}
+
+		private void CheckForUndefinedRequiredOptions()
+		{
+			Option firstUndefinedRequired = (from o in _options
+											 where o.IsRequired && !o.IsDefined
+											 select o).FirstOrDefault();
+
+			//var required = _optionDefinitions.Where(od => od.IsRequired == true);
+			//var undefinedRequired = (from r in required
+			//                         join o in _options on r.LongName.ToLower() equals o.LongName.ToLower() into joinedTable
+			//                         from j in joinedTable.DefaultIfEmpty()
+			//                         where j == null //get all optiondefinitions that are required that don't match a supplied user option
+			//                         select r.LongName).ToList();
+
+			//var LeftJoin = from emp in ListOfEmployees
+			//               join dept in ListOfDepartment on emp.DeptID equals dept.ID into JoinedEmpDept
+			//               from dept in JoinedEmpDept.DefaultIfEmpty()
+			//               select new
+			//               {
+			//                   EmployeeName = emp.Name,
+			//                   DepartmentName = dept != null ? dept.Name : null
+			//               };
+
+			if (firstUndefinedRequired != null)
+				throw new Exception(string.Format("{0} is a required option", firstUndefinedRequired.LongName));
+		}
+
+		private void PopulateOptionCollection()
+		{
+			_options = new List<Option>();
+			foreach (OptionDefinition od in _optionDefinitions)
+				_options.Add(new Option { IsFlag = od.IsFlag, IsRequired = od.IsRequired, LongName = od.LongName, ShortName = od.ShortName });
+		}
+
 
 		public bool IsOptionDefined(string name)
 		{
 			if (string.IsNullOrEmpty(name))
 				return false;
 
-			return _options.Where(o => string.Compare(o.LongName, name, true) == 0)
+			return _options.Where(o => o.IsDefined)
+						   .Where(o => string.Compare(o.LongName, name, true) == 0)
 						   .Count() == 1;
 		}
 
@@ -85,7 +115,8 @@ namespace cb.Options
 			if (string.IsNullOrEmpty(name))
 				return string.Empty;
 
-			return _options.Where(o => string.Compare(o.LongName, name, true) == 0)
+			return _options.Where(o => o.IsDefined)
+							.Where(o => string.Compare(o.LongName, name, true) == 0)
 							.Select(o => o.StringValue)
 							.FirstOrDefault();
 		}
@@ -104,6 +135,8 @@ namespace cb.Options
 
 		public void Parse(string[] args)
 		{
+			PopulateOptionCollection();
+
 			foreach (string s in args)
 			{
 				if (string.IsNullOrEmpty(s))
@@ -132,25 +165,7 @@ namespace cb.Options
 					throw new Exception("Options must start with '-'");
 				}
 			}
-
-			var required = _optionDefinitions.Where(od => od.IsRequired == true);
-			var undefinedRequired = (from r in required
-							 join o in _options on r.LongName.ToLower() equals o.LongName.ToLower() into joinedTable
-							 from j in joinedTable.DefaultIfEmpty()
-							 where j == null //get all optiondefinitions that are required that don't match a supplied user option
-							 select r.LongName).ToList();
-
-			//var LeftJoin = from emp in ListOfEmployees
-			//               join dept in ListOfDepartment on emp.DeptID equals dept.ID into JoinedEmpDept
-			//               from dept in JoinedEmpDept.DefaultIfEmpty()
-			//               select new
-			//               {
-			//                   EmployeeName = emp.Name,
-			//                   DepartmentName = dept != null ? dept.Name : null
-			//               };
-
-			if (undefinedRequired.Count > 0)
-				throw new Exception(string.Format("{0} is a required option", undefinedRequired[0]));
+			CheckForUndefinedRequiredOptions();
 		}
 
 	}

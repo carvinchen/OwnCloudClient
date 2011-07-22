@@ -9,9 +9,10 @@ namespace cb.Options
 	{
 		public bool IsRequired { get; set; }
 		public bool IsFlag { get; set; }
-		public bool IsDefined { get; set; }
 		public string LongName { get; set; }
-		public string StringValue { get; set; }
 		public char ShortName { get; set; }
+
+		public string StringValue { get; set; }
+		public bool IsDefined { get; set; }
 	}
 }
