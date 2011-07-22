@@ -174,7 +174,7 @@ namespace OwnCloudClient
 
 		public static int SleepSeconds
 		{
-			get { return GetInt(Constants.SleepSeconds, _sleepSeconds, 10); }
+			get { return GetInt(Constants.SleepSeconds, _sleepSeconds, 60); }
 			set { SetInt(Constants.SleepSeconds, ref _sleepSeconds, value); }
 		} private static int? _sleepSeconds = null;
 

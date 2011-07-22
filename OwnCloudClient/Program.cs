@@ -175,8 +175,12 @@ namespace OwnCloudClient
 
 				if (p.IsOptionDefined(Settings.Constants.WatchDir))
 					Settings.WatchDir = p.GetOptionStringValue(Settings.Constants.WatchDir);
+
 				if (p.IsOptionDefined(Settings.Constants.OwnCloudUrl))
 					Settings.OwnCloudUrl = p.GetOptionStringValue(Settings.Constants.OwnCloudUrl);
+				if (string.IsNullOrEmpty(Settings.OwnCloudUrl) || !Settings.OwnCloudUrl.StartsWith("http"))
+					throw new Exception("Invalid OwnCloudUrl");
+
 				if (p.IsOptionDefined(Settings.Constants.SleepSeconds))
 					Settings.SleepSeconds = Convert.ToInt32(p.GetOptionStringValue(Settings.Constants.SleepSeconds));
 				if (p.IsOptionDefined(Settings.Constants.DownloadAllPrefix))
