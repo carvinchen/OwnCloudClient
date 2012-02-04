@@ -184,14 +184,16 @@ namespace OwnCloudClient
 			}
 
 			HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-			if ((int)response.StatusCode == 302)
+			if (response.StatusCode == HttpStatusCode.Found)
 			{
 				using (Stream responseStream = response.GetResponseStream())
 				{
 					using (StreamReader reader = new StreamReader(responseStream))
 					{
 						string responseFromServer = reader.ReadToEnd();
-						success = responseFromServer == "\n\n12"; //success message
+						success = !string.IsNullOrWhiteSpace(responseFromServer)
+									&& responseFromServer.Length >= 4
+									&& responseFromServer.Substring(0,4) == "\n\n12"; //success message
 						reader.Close();
 					}
 					responseStream.Close();

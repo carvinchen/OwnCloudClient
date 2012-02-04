@@ -175,6 +175,8 @@ namespace OwnCloudClient
 
 				if (p.IsOptionDefined(Settings.Constants.WatchDir))
 					Settings.WatchDir = p.GetOptionStringValue(Settings.Constants.WatchDir);
+				if (!System.IO.Directory.Exists(Settings.WatchDir))
+					throw new Exception(string.Format("Watch directory '{0}' does not exist.  Please create it and re-run the program.", Settings.WatchDir));
 
 				if (p.IsOptionDefined(Settings.Constants.OwnCloudUrl))
 					Settings.OwnCloudUrl = p.GetOptionStringValue(Settings.Constants.OwnCloudUrl);
