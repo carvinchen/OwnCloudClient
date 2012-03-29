@@ -233,7 +233,6 @@ namespace OwnCloudClient
 					return;
 				}
 
-
 				if (Settings.ListRemoteFiles)
 				{
 					OwnCloudClient.PrintRemoteFileList();
@@ -280,13 +279,15 @@ namespace OwnCloudClient
 				if (!Settings.UploadOnly)
 					FileHelpers.ReplaceOutDatedLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmDownload);
 
-				DateTime lastSweep = DateTime.Now;
+				DateTime lastSweepUtc = DateTime.UtcNow;
+
 				while (true)
 				{
 					NLogger.Current.Trace("Refreshing locals");
 					localFiles = OwnCloudClient.GetLocalFileList();
+					DateTime currentSweepUtc = DateTime.UtcNow; //this is the correct place to take snapshot, but we need the previous one for the upload check below
 
-					int uploadCount = FileHelpers.UploadNewLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmUpload, lastSweep);
+					int uploadCount = FileHelpers.UploadNewLocalFiles(localFiles, remoteFiles, !Settings.NoConfirmUpload, lastSweepUtc);
 
 					int deleteCount = 0;
 					if (!Settings.UploadOnly)
@@ -301,7 +302,7 @@ namespace OwnCloudClient
 						remoteFiles = OwnCloudClient.GetRemoteFileList();
 					}
 
-					lastSweep = DateTime.Now;
+					lastSweepUtc = currentSweepUtc;
 					NLogger.Current.Trace(string.Format("Sleeping for {0} seconds", Settings.SleepSeconds));
 					System.Threading.Thread.Sleep(1000 * Settings.SleepSeconds);
 				}

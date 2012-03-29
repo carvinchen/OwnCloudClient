@@ -14,11 +14,11 @@ namespace OwnCloudClient
 	{
 		private static string phpId = null;
 
-		private static string EmbedDataIntoFileName(string localFullPath, DateTime lastModified)
+		private static string EmbedDataIntoFileName(string localFullPath, DateTime lastModifiedUtc)
 		{
 			return localFullPath.Replace(Settings.WatchDir, "").Replace(System.IO.Path.DirectorySeparatorChar, '~') +
 							".enc" +
-							"." + GetUnixTimeStamp(lastModified);
+							"." + GetUnixUtcTimeStamp(lastModifiedUtc);
 		}
 
 		//!FileNameProcessing
@@ -31,7 +31,7 @@ namespace OwnCloudClient
 		private static DateTime GetLastModifiedFromCloudFileNameWithEmbeddedData(string cloudFileNameWithEmbeddedData)
 		{
 			string sUnixTime = cloudFileNameWithEmbeddedData.Substring(cloudFileNameWithEmbeddedData.Length - 12, 12);
-			return new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(Convert.ToDouble(sUnixTime));
+			return DateTime.SpecifyKind(new DateTime(1970, 1, 1, 0, 0, 0), DateTimeKind.Utc).AddSeconds(Convert.ToDouble(sUnixTime));
 		}
 
 		//!FileNameProcessing
@@ -40,7 +40,7 @@ namespace OwnCloudClient
 			string cloudFileName = cloudFileNameWithEmbeddedData.Substring(0, cloudFileNameWithEmbeddedData.Length - 13); //13 for '.' + unix date
 
 			string sUnixTime = cloudFileNameWithEmbeddedData.Substring(cloudFileNameWithEmbeddedData.Length - 12, 12);
-			DateTime modified = new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(Convert.ToDouble(sUnixTime));
+			DateTime modifiedUtc = DateTime.SpecifyKind(new DateTime(1970, 1, 1, 0, 0, 0), DateTimeKind.Utc).AddSeconds(Convert.ToDouble(sUnixTime));
 
 			string localFileName = cloudFileName.Replace('~', System.IO.Path.DirectorySeparatorChar);
 			localFileName = localFileName.Substring(0, localFileName.Length - 4);
@@ -49,7 +49,7 @@ namespace OwnCloudClient
 				return new FileInfoX() 
 				{ 
 					CloudFileName = cloudFileName, 
-					LastModified = modified, 
+					LastModifiedUtc = modifiedUtc, 
 					CloudFileNameWithEmbeddedData = cloudFileNameWithEmbeddedData, 
 					LocalFileName = localFileName,
 					EncryptedCloudFileNameWithEmbeddedData = EncryptFileName(cloudFileNameWithEmbeddedData)
@@ -136,9 +136,10 @@ namespace OwnCloudClient
 			}
 		}
 
-		private static string GetUnixTimeStamp(DateTime modifiedDate)
+		private static string GetUnixUtcTimeStamp(DateTime modifiedDateUtc)
 		{
-			TimeSpan ts = (modifiedDate - new DateTime(1970, 1, 1, 0, 0, 0));
+
+			TimeSpan ts = (modifiedDateUtc - DateTime.SpecifyKind(new DateTime(1970, 1, 1, 0, 0, 0), DateTimeKind.Utc));
 			return string.Format("{0:000000000000}", ts.TotalSeconds); //12 zeros
 		}
 
@@ -246,13 +247,13 @@ namespace OwnCloudClient
 				var info = new System.IO.FileInfo(item);
 
 				FileInfoX x = new FileInfoX();
-				DateTime lastWrite = new DateTime(info.LastWriteTime.Year, info.LastWriteTime.Month, info.LastWriteTime.Day, info.LastWriteTime.Hour, info.LastWriteTime.Minute, info.LastWriteTime.Second); //do it this way to avoid milisecond comparison problemsinfo.LastWriteTime;
+				DateTime lastWriteUtc = new DateTime(info.LastWriteTime.Year, info.LastWriteTime.Month, info.LastWriteTime.Day, info.LastWriteTime.Hour, info.LastWriteTime.Minute, info.LastWriteTime.Second).ToUniversalTime(); //do it this way to avoid milisecond comparison problemsinfo.LastWriteTime;
 
 				//!FileNameProcessing
 				x.CloudFileName = item.Replace(Settings.WatchDir, "").Replace(System.IO.Path.DirectorySeparatorChar, '~') + ".enc";
-				x.LastModified = lastWrite;
+				x.LastModifiedUtc = lastWriteUtc;
 				x.LocalFileName = item.Replace(Settings.WatchDir, "");
-				x.CloudFileNameWithEmbeddedData = x.CloudFileName + "." + OwnCloudClient.GetUnixTimeStamp(lastWrite);
+				x.CloudFileNameWithEmbeddedData = x.CloudFileName + "." + OwnCloudClient.GetUnixUtcTimeStamp(lastWriteUtc);
 				x.EncryptedCloudFileNameWithEmbeddedData = EncryptFileName(x.CloudFileNameWithEmbeddedData);
 				files.Add(x);
 			}
@@ -293,7 +294,7 @@ namespace OwnCloudClient
 				byte[] encrypted = Encryption.EncryptFile(localFullPath);
 
 				//!FileNameProcessing
-				string cloudFileNameWithEmbeddedData = EmbedDataIntoFileName(localFullPath, fi.LastWriteTime);
+				string cloudFileNameWithEmbeddedData = EmbedDataIntoFileName(localFullPath, fi.LastWriteTime.ToUniversalTime());
 
 				string encryptedFileName = EncryptFileName(cloudFileNameWithEmbeddedData);
 
@@ -371,7 +372,7 @@ namespace OwnCloudClient
 				System.IO.File.WriteAllBytes(localFileName, decryptedContents);
 
 				DateTime modified = GetLastModifiedFromCloudFileNameWithEmbeddedData(cloudFileNameWithEmbeddedData);
-				File.SetLastWriteTime(localFileName, modified);
+				File.SetLastWriteTime(localFileName, modified.ToLocalTime()); //SetLastWriteTime() expects local time as parameter
 
 				NLogger.Current.Info("Download finished.");
 			}
@@ -389,7 +390,7 @@ namespace OwnCloudClient
 			if (System.IO.File.Exists(fname))
 			{
 				System.IO.FileInfo info = new FileInfo(fname);
-				shouldDownload = info.LastWriteTime < f.LastModified;
+				shouldDownload = info.LastWriteTime.ToUniversalTime() < f.LastModifiedUtc;
 			}
 			else
 			{

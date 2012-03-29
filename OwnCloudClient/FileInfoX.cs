@@ -9,7 +9,7 @@ namespace OwnCloudClient
 	{
 		public string CloudFileNameWithEmbeddedData { get; set; }
 		public string CloudFileName { get; set; }
-		public DateTime LastModified { get; set; }
+		public DateTime LastModifiedUtc { get; set; }
 		public string LocalFileName { get; set; }
 		public string EncryptedCloudFileNameWithEmbeddedData { get; set; }
 	}

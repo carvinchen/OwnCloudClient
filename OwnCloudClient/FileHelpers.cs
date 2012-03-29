@@ -70,7 +70,7 @@ namespace OwnCloudClient
 		{
 			var remoteQuery = (from l in localFiles
 							   join r in remoteFiles on l.CloudFileName equals r.CloudFileName
-							   where (l.LastModified - r.LastModified).Seconds >= 2
+							   where (l.LastModifiedUtc - r.LastModifiedUtc).TotalSeconds >= 2
 							   select new { OldCloudNamePlusDate = r.CloudFileNameWithEmbeddedData, NewFileName = r.LocalFileName }).ToList();
 
 			bool assumeConfirmed = !confirmUpload;
@@ -85,7 +85,7 @@ namespace OwnCloudClient
 
 			foreach (var uploadFile in remoteQuery)
 			{
-				Console.Write(ConfirmRequest.Delete.ToString() + " " + uploadFile.NewFileName + " ");
+				Console.Write(ConfirmRequest.Upload.ToString() + " " + uploadFile.NewFileName + " ");
 				if (assumeConfirmed)
 				{
 					Console.WriteLine();
@@ -120,7 +120,7 @@ namespace OwnCloudClient
 		{
 			var localQuery = from l in localFiles
 							 join r in remoteFiles on l.LocalFileName equals r.LocalFileName
-							 where (r.LastModified - l.LastModified).Seconds >= 2
+							 where (r.LastModifiedUtc - l.LastModifiedUtc).TotalSeconds >= 2
 							 select r;
 
 			var shouldDownloadLocalQuery = localQuery.Where(f => OwnCloudClient.ShouldDownload(f)).ToList();
@@ -144,9 +144,9 @@ namespace OwnCloudClient
 
 		//files that exist on disk and not in the cloud -- assume new file and upload
 		//files that exist on disk and the lastmodified date is greater than our last sweep -- assume locally modified and upload
-		public static int UploadNewLocalFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool askUpload, DateTime lastSweep)
+		public static int UploadNewLocalFiles(List<FileInfoX> localFiles, List<FileInfoX> remoteFiles, bool askUpload, DateTime lastSweepUtc)
 		{
-			var toUpload = localFiles.Where(x => !remoteFiles.Select(y => y.CloudFileName).Contains(x.CloudFileName) || x.LastModified > lastSweep).ToList();
+			var toUpload = localFiles.Where(x => !remoteFiles.Select(y => y.CloudFileName).Contains(x.CloudFileName) || x.LastModifiedUtc > lastSweepUtc).ToList();
 
 			if (toUpload.Count > 0)
 			{
@@ -161,7 +161,7 @@ namespace OwnCloudClient
 
 			foreach (var x in confirmedToUpload)
 			{
-				if (x.LastModified > lastSweep)
+				if (x.LastModifiedUtc > lastSweepUtc)
 				{
 					var toDeleteX = remoteFiles.Where(y => y.CloudFileName == x.CloudFileName).FirstOrDefault();
 					OwnCloudClient.DeleteFile(toDeleteX.CloudFileNameWithEmbeddedData);
