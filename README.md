@@ -15,6 +15,7 @@ There are modern Windows, Mac, and Linux clients available from the OwnCloud web
 ~~Experimental work with mono(.net 3.5):~~
 ~~Compile on windows and copy binaries to linux machine~~
 ~~Copy the following two .net binaries from your windows machine:~~
-	- ~~System.ServiceModel.dll~~
-	- ~~System.Runtime.Serialization.dll~~
+ - ~~System.ServiceModel.dll~~
+ - ~~System.Runtime.Serialization.dll~~
+
 ~~Run via: mono OwnCloudClient.exe --owncloudurl=https://yoursite.com/path-to-owncloud~~
